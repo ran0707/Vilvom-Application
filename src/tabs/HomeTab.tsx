@@ -1,25 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ScrollView, Animated, Easing, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Animated, Easing, Dimensions } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
-import {
-  WeatherCurrent,
-  WeatherDaily,
-  WeatherFullData,
-} from '../types/interfaces';
+import { WeatherCurrent, WeatherFullData } from '../types/interfaces';
 
 import NotificationPopup from '../components/NotificationPopup';
-import TaskCard from '../components/TaskCard';
 import DroneServiceCard from '../components/DroneServiceCard';
 import WeatherDetailsModal from '../components/WeatherDetailsModal';
 import PestInfestationCard from '../components/PestInfestationCard';
-import { getHomeData } from '../services/authApi';
+import { getHomeData, isAuthenticated } from '../services/authApi';
 import { teaPlantationPhrases, notifications } from '../constants/statics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getItem } from '../utils/storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import NotificationService from '../services/notificationService';
-import { isAuthenticated } from '../services/authApi';
 
 import { useTranslation } from 'react-i18next';
 
@@ -34,21 +28,15 @@ import {
   renderWeatherDetailItem,
 } from '../utils/homeUtils';
 
-import {
-  HeaderSection,
-  WeatherSection,
-} from '../components/HomeTabSections';
+import { WeatherSection } from '../components/HomeTabSections';
 import SuccessStories from '../components/SuccessStories';
 
 import styles from '../styles/HomeTabStyles';
-import LogoHeader from '../components/LogoHeader';
+
 const { height } = Dimensions.get('window');
 
 const HomeTab = () => {
   const { t, i18n } = useTranslation();
-  const [avatarUrl, setAvatarUrl] = useState(
-    'https://i.pravatar.cc/150?img=12',
-  );
   const navigation = useNavigation();
   const [weather, setWeather] = useState<WeatherCurrent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -485,7 +473,7 @@ const HomeTab = () => {
           'Network request failed - backend server may not be running',
         );
         setUser({ name: 'Guest User', email: 'guest@example.com' });
-      } else if (error && (error as any).message?.includes('token') || (error as any).message?.includes('Unauthorized')) {
+      } else if (error && ((error as any).message?.includes('token') || (error as any).message?.includes('Unauthorized'))) {
         console.log('Authentication error, using guest mode');
         setUser({ name: 'Guest User', email: 'guest@example.com' });
       } else {
