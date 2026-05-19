@@ -1,0 +1,249 @@
+{
+  "common": {
+    "see_all": "সব দেখুন",
+    "ok": "ঠিক আছে",
+    "cancel": "বাতিল করুন",
+    "close": "বন্ধ করুন",
+    "back": "ফিরে যান",
+    "yes": "হ্যাঁ",
+    "no": "না",
+    "loading": "লোড করা হচ্ছে...",
+    "error": "ত্রুটি",
+    "success": "সাফল্য",
+    "unknown": "অজানা"
+  },
+
+  "nav": {
+    "result": "ফলাফল",
+    "get_started": "শুরু করুন",
+    "signup": "সাইন আপ",
+    "main_tabs": "হোম"
+  },
+
+  "get_started": {
+    "title": "নির্ণয় করুন, রক্ষা করুন, ফসল সংরক্ষণ করুন",
+    "subtitle": "AI-ভিত্তিক সনাক্তকরণ দ্বারা দ্রুত আপনার ফসলের রোগ শনাক্ত করুন। আপনার উৎপাদন সুরক্ষিত রাখুন।",
+    "cta": "Plant AI দিয়ে শুরু করুন",
+    "guest_login": "অতিথি লগইন"
+  },
+
+  "signup": {
+    "title": "সাইন আপ",
+    "placeholder": {
+      "name": "নাম",
+      "email": "ইমেইল",
+      "password": "পাসওয়ার্ড",
+      "confirm_password": "পাসওয়ার্ড নিশ্চিত করুন"
+    },
+    "errors": {
+      "name_required": "দয়া করে আপনার নাম দিন",
+      "email_required": "দয়া করে আপনার ইমেইল দিন",
+      "password_required": "দয়া করে পাসওয়ার্ড দিন",
+      "password_length": "পাসওয়ার্ড কমপক্ষে 6 অক্ষরের হওয়া উচিত",
+      "password_mismatch": "পাসওয়ার্ড মিলছে না",
+      "signup_failed": "সাইন আপ ব্যর্থ হয়েছে। দয়া করে আবার চেষ্টা করুন।"
+    },
+    "account_created": "অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!"
+  },
+
+  "camera": {
+    "permission_denied": "অনুমতি প্রত্যাখ্যান করা হয়েছে",
+    "camera_permission_required": "ছবি তুলতে ক্যামেরা অনুমতি প্রয়োজন।",
+    "gallery_permission_required": "গ্যালারি নির্বাচন করতে অনুমতি প্রয়োজন",
+    "missing_module_title": "মডিউল অনুপস্থিত",
+    "missing_module_message": "প্রয়োজনীয় মডিউল ইনস্টল নেই। দয়া করে ইনস্টল করুন এবং অ্যাপ পুনর্নির্মাণ করুন।",
+    "analyzing": "বিশ্লেষণ করা হচ্ছে...",
+    "camera_init": "ক্যামেরা আরম্ভ হচ্ছে...",
+    "camera_unavailable": "ক্যামেরা উপলব্ধ নেই",
+    "camera_permission_denied": "ক্যামেরা অনুমতি প্রত্যাখ্যাত"
+  },
+
+  "pest_result": {
+    "title": "ফলাফল",
+    "no_result": "কোন ফলাফল পাওয়া যায়নি।",
+    "analyzing": "ছবি বিশ্লেষণ করা হচ্ছে...",
+    "symptoms": "লক্ষণ",
+    "control_recommendations": "নিয়ন্ত্রণ পরামর্শ",
+    "no_symptoms": "কোন লक्षण তথ্য নেই।",
+    "biological": "জৈবিক",
+    "chemical": "রাসায়নিক",
+    "mechanical": "যান্ত্রিক",
+    "ask_placeholder": "এই পোকা বা চায়ের গাছের যত্ন সম্পর্কে জিজ্ঞাসা করুন...",
+    "send": "পাঠান",
+    "chat_error": "দুঃখিত, কোন উত্তর পাওয়া যায়নি।",
+    "detection_prefix": "চিহ্নিত: ",
+    "unknown": "অজানা"
+  },
+
+  "drone": {
+    "title": "ড্রোন সার্ভিসে যোগাযোগ করুন",
+    "card_title": "পেশাদার ড্রোন সার্ভিস",
+    "card_subtitle": "চাহ বাগানের জন্য ব্যাপক স্প্রে, ম্যাপিং এবং মনিটরিং।",
+    "placeholder": {
+      "name": "আপনার নাম",
+      "phone": "ফোন নম্বর",
+      "message": "সংক্ষিপ্ত বার্তা / প্রয়োজনীয়তা"
+    },
+    "contact_provider": "প্রোভাইডারের সাথে যোগাযোগ করুন",
+    "info_response_time": "24 ঘন্টার মধ্যে উত্তর দেওয়া হবে। মূল্য শ্রেণি অনুযায়ী।"
+  },
+
+  "profile": {
+    "load_error_title": "ত্রুটি",
+    "load_error_message": "ব্যবহারকারীর প্রোফাইল লোড করতে ব্যর্থ হয়েছে",
+    "logout_confirm_title": "লগ আউট",
+    "logout_confirm_message": "আপনি কি সত্যিই লগআউট করতে চান?",
+    "title": "প্রোফাইল",
+    "language_selection": "ভাষা নির্বাচন",
+    "logout": "লগ আউট",
+    "sign_up": "সাইন আপ",
+    "pests_detected": "পোকা সনাক্ত হয়েছে",
+    "most_common_pest": "সবচেয়ে সাধারণ: চা পোকা",
+    "no_action": "কোনো পদক্ষেপ নেই",
+    "drone_service": "ড্রোন সার্ভিস",
+    "current_location": "বর্তমান অবস্থান",
+    "recent_orders": "সাম্প্রতিক অর্ডার",
+    "order_tracking": "অর্ডার ট্র্যাকিং",
+    "notifications": "বিজ্ঞপ্তি",
+    "help_support": "সাহায্য এবং সমর্থন",
+    "field_overview": "ক্ষেত্র ওভারভিউ"
+  },
+
+  "home": {
+    "hello": "হ্যালো!",
+    "my_fields": "আমার চা ক্ষেত",
+    "my_pests": "আমার খেতের পোকামাকড়",
+    "field_status": {
+      "healthy": "স্বাস্থ্যকর",
+      "needs_pruning": "ছাঁটা প্রয়োজন"
+    },
+    "tasks_title": "কাজ করতে হবে",
+    "greeting": {
+      "morning": "সুপ্রভাত",
+      "afternoon": "শুভ অপরাহ্ন",
+      "evening": "শুভ সন্ধ্যা",
+      "day": "শুভ দিন"
+    },
+    "getting_location": "অবস্থান পাওয়া হচ্ছে...",
+    "detecting_location": "অবস্থান সনাক্ত করা হচ্ছে...",
+    "location_permission_denied": "অবস্থান অনুমতি প্রত্যাখ্যান করা হয়েছে",
+    "location_unavailable": "অবস্থান উপলব্ধ নয়",
+    "weather_service_error": "আবহাওয়া সেবায় ত্রুটি",
+    "network_error": "নেটওয়ার্ক ত্রুটি",
+    "tasks": {
+      "no_upcoming": "কোনও আসন্ন কাজ নেই",
+      "add_spray_log": "স্প্রে লগ যোগ করুন"
+    },
+    "no_predictions": "এখনও কোনো পূর্বাভাস নেই — একটি উদ্ভিদ স্ক্যান করুন এবং এখানে ফলাফল দেখুন"
+  },
+
+  "market": {
+    "title": "টি হাব",
+    "subtitle": "প্ল্যান্টেশন সরবরাহ এবং কিউরেটেড চা",
+    "search_placeholder": "পণ্য বা ট্যাগ খুঁজুন",
+    "use_my_location": "আমার অবস্থান ব্যবহার করুন",
+    "back": "ফিরে যান",
+    "contact_dealer": "ডিলারের সাথে যোগাযোগ করুন",
+    "open_in_maps": "মানচিত্রে খুলুন",
+    "categories": {
+      "all": "সব",
+      "black_tea": "ব্ল্যাক টি",
+      "green_tea": "গ্রিন টি",
+      "saplings": "সাপলিংস",
+      "gear": "গিয়ার",
+      "equipment": "উপকরণ"
+    }
+  },
+
+  "spray": {
+    "title": "স্প্রে লগ",
+    "calendar_days": ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্র", "শনি"],
+    "logs_for": "{{date}} এর জন্য লগস্",
+    "add_log": "+ লগ যোগ করুন",
+    "no_logs": "এই তারিখের জন্য কোনো লগ নেই",
+    "errors": {
+      "title_required": "শিরোনাম প্রয়োজন"
+    },
+    "delete_confirm_title": "মুছুন নিশ্চিত করুন",
+    "delete_confirm_message": "আপনি কি এই লগ মুছতে চান?",
+    "cancel": "বাতিল",
+    "delete": "মুছুন",
+    "edit_log": "লগ সম্পাদনা করুন",
+    "add_log_title": "লগ যোগ করুন",
+    "placeholder": {
+      "title": "শিরোনাম (উদাহরণ: উত্তর ফিল্ড স্প্রে)",
+      "time": "সময় (HH:MM)",
+      "notes": "নোটস"
+    },
+    "save": "সংরক্ষণ",
+    "add": "যোগ করুন"
+  },
+
+  "weather": {
+    "details_title": "আবহাওয়া বিবরণ",
+    "current_conditions": "বর্তমান অবস্থা",
+    "temperature": "তাপমাত্রা",
+    "feels_like": "অনুভব হচ্ছে",
+    "dew_point": "ডিউ পয়েন্ট",
+    "today_high": "আজ উচ্চতম",
+    "today_low": "আজ নিম্নতম",
+    "precipitation": "বৃষ্টিপাত",
+    "rain": "বৃষ্টি",
+    "showers": "জল ফোঁটা",
+    "snowfall": "হিমবৃষ্টি",
+    "precipitation_hours": "বৃষ্টির ঘণ্টা",
+    "wind_and_pressure": "হাওয়া এবং চাপ",
+    "wind_speed": "বায়ুর গতি",
+    "wind_direction": "বাতাসের দিক",
+    "wind_gusts": "বায়ুর ঝোড়ো",
+    "pressure": "চাপ",
+    "atmospheric_conditions": "বায়ুমণ্ডলীয় অবস্থা",
+    "cloud_cover": "মেঘাচ্ছন্নতা",
+    "humidity": "আর্দ্রতা",
+    "visibility": "দৃশ্যমানতা",
+    "sun": "সূর্য",
+    "sunrise": "সূর্যোদয়",
+    "sunset": "সূর্যাস্ত",
+    "additional_information": "অতিরিক্ত তথ্য",
+    "weather_code": "আবহাওয়া কোড",
+    "last_updated": "সর্বশেষ আপডেট",
+    "tea_advice_prefix": "চা পরামর্শ:"
+  },
+
+  "components": {
+    "drone_banner": {
+      "badge": "ড্রোন সার্ভিস",
+      "title": "চা প্ল্যান্টেশন ড্রোন সমাধান",
+      "description": "স্প্রে, এয়ারিয়াল ম্যাপিং এবং মনিটরিং",
+      "pesticide_spraying": "পোকামাকড় নাশক ছিটানো",
+      "aerial_mapping": "হাওয়াই মানচিত্র",
+      "contact_us": "আমাদের সাথে যোগাযোগ করুন"
+    },
+    "product_card": {
+      "tag_prefix": "ট্যাগ:"
+    }
+  },
+  "pest_infestation": {
+    "heading": "কীট সংক্রমণ",
+    "help_title": "আপনার ফসলকে সাহায্য করুন",
+    "step_take": "ছবি\nনিন",
+    "step_analyse": "বিশ্লেষণ\nকীট",
+    "step_recommend": "আমাদের সুপারিশ",
+    "take_button": "ছবি নিন",
+    "info_heading": "কীট সংক্রমণ",
+    "info_sub": "দ্রুত কীট নির্ণয়ের জন্য পাতা স্ক্যান করুন এবং সোজা পরামর্শ পান।",
+    "get_help": "সাহায্য পান",
+    "advisory_title": "পরামর্শ যোগাযোগ",
+    "advisory_sub": "বিশেষজ্ঞের সাহায্য পান",
+    "news_title": "সর্বশেষ চা সংবাদ",
+    "news_sub": "সর্বশেষ আপডেট পড়ুন",
+    "auction_title": "নিলাম দাম",
+    "auction_sub": "সর্বশেষ গড় নিলাম দাম ও চার্ট",
+    "recent_heading": "সাম্প্রতিক শনাক্তকরণ",
+    "severity": {
+      "mild": "হালকা",
+      "moderate": "মধ্যম",
+      "severe": "গুরুতর"
+    }
+  }
+}

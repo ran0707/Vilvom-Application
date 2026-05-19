@@ -1,0 +1,316 @@
+{
+  "common": {
+    "see_all": "See All",
+    "ok": "OK",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "unknown": "Unknown"
+  },
+
+  "nav": {
+    "result": "Result",
+    "get_started": "Get Started",
+    "signup": "Sign Up",
+    "main_tabs": "Home"
+  },
+
+  "get_started": {
+    "title": "Detect, Prevent, Save Plants",
+    "subtitle": "Identify plant diseases early with AI-powered detection. Protect your crops, improve yield, and ensure healthy growth.",
+    "cta": "Get Started with Plant AI",
+    "guest_login": "Login as Guest"
+  },
+
+  "signup": {
+    "title": "Sign Up",
+    "placeholder": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "confirm_password": "Confirm Password"
+    },
+    "errors": {
+      "name_required": "Please enter your name",
+      "email_required": "Please enter your email",
+      "password_required": "Please enter your password",
+      "password_length": "Password must be at least 6 characters",
+      "password_mismatch": "Passwords do not match",
+      "signup_failed": "Signup failed. Please try again."
+    },
+    "account_created": "Account created successfully!"
+  },
+
+  "camera": {
+    "permission_denied": "Permission Denied",
+    "camera_permission_required": "Camera permission is required to take photos.",
+    "gallery_permission_required": "Gallery permission is required to select photos.",
+    "missing_module_title": "Missing module",
+    "missing_module_message": "Required native module is not installed. Install and rebuild the app.",
+    "analyzing": "Analyzing...",
+    "camera_init": "Initializing camera...",
+    "camera_unavailable": "Camera not available",
+    "camera_permission_denied": "Camera permission denied"
+  },
+
+  "pest_result": {
+    "title": "Result",
+    "no_result": "No result available.",
+    "analyzing": "Analyzing image...",
+    "symptoms": "Symptoms",
+    "control_recommendations": "Control Recommendations",
+    "no_symptoms": "No symptom information.",
+    "biological": "Biological",
+    "chemical": "Chemical",
+    "mechanical": "Mechanical",
+    "ask_placeholder": "Ask about this pest or tea care...",
+    "send": "Send",
+    "chat_error": "Sorry, I could not get a response.",
+    "detection_prefix": "Detection:",
+    "unknown": "Unknown"
+  },
+
+  "drone": {
+    "title": "Drone Service Contact",
+    "card_title": "Professional Drone Services",
+    "card_subtitle": "Precision spraying, mapping, and monitoring for tea plantations.",
+    "no_predictions": "No predictions yet — scan a plant to see detections here",
+    "name": "Your name",
+    "phone": "Phone number",
+    "message": "Brief message / requirements",
+    "contact_provider": "Contact Provider",
+    "info_response_time": "We will respond within 24 hours. Prices depend on field size and services."
+  },
+
+  "profile": {
+    "load_error_title": "Error",
+    "load_error_message": "Failed to load user profile",
+    "logout_confirm_title": "Logout",
+    "logout_confirm_message": "Are you sure you want to logout?",
+    "title": "Profile",
+    "language_selection": "Language Selection",
+    "logout": "Logout",
+    "sign_up": "Sign up",
+    "pests_detected": "Pests detected",
+    "most_common_pest": "Most common pest: Tea Mosquito Bug 🐛",
+    "no_action": "No Action Taken",
+    "drone_service": "Drone Service",
+    "current_location": "Current Location",
+    "recent_orders": "Recent Orders",
+    "order_tracking": "Order Tracking",
+    "notifications": "Notifications",
+    "help_support": "Help & Support",
+    "field_overview": "Field Overview"
+  },
+
+  "home": {
+    "hello": "Hello!",
+    "my_fields": "My Tea Fields",
+    "my_pests": "My Plantation Pests",
+    "field_status": {
+      "healthy": "Healthy",
+      "needs_pruning": "Needs Pruning"
+    },
+    "tasks_title": "Tasks To Do",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "day": "Good day"
+    },
+    "location_permission_blocked": "Location permission blocked. Open settings to enable.",
+    "location_permission_message": "Location permission is required to get your current coordinates.",
+    "open_settings": "Open Settings",
+    "location_provider_unavailable": "Location provider unavailable",
+    "location_provider_message": "Your device location services (GPS) appear to be turned off. Please enable Location/GPS in your device settings and try again.",
+    "getting_location": "Getting location...",
+    "detecting_location": "Detecting location...",
+    "location_permission_denied": "Location permission denied",
+    "location_unavailable": "Location unavailable",
+    "location_unavailable_title": "Location Unavailable",
+    "location_unavailable_message": "Unable to get your location. Please check your GPS settings and try again.",
+    "location_request_timed_out": "Location request timed out",
+    "location_timeout_message": "Location request timed out. Try again or use reduced accuracy (network) location which may return faster.",
+    "try_low_accuracy": "Try low accuracy",
+    "location_access_failed": "Unable to access location",
+    "unexpected_error": "Unexpected error",
+    "weather_service_error": "Weather service error",
+    "network_error": "Network error",
+    "phrases": {
+      "sunny": [
+        "Ideal weather for tea growth today",
+        "Sunshine perfect for tea leaf maturation",
+        "Good day for plucking - leaves are dry",
+        "Optimal conditions for tea photosynthesis"
+      ],
+      "cloudy": [
+        "Cloud cover helps retain soil moisture",
+        "Mild weather reduces water stress on plants",
+        "Comfortable conditions for field workers",
+        "Steady growth weather for tea bushes"
+      ],
+      "rain": [
+        "Don't spray today - rain is coming",
+        "Natural irrigation for the tea fields",
+        "Hold off fertilizer application - showers expected",
+        "Rain will help flush the soil nutrients"
+      ],
+      "wind": [
+        "Wind may help dry leaves after morning dew",
+        "Moderate breeze reduces fungal disease risk",
+        "Watch for soil erosion in exposed areas",
+        "Wind can help with pest dispersal control"
+      ],
+      "humid": [
+        "High humidity increases fungal risk - monitor closely",
+        "Good conditions for tea growth but watch for diseases",
+        "Humid weather accelerates leaf growth",
+        "Ideal conditions for tea but check for mildew"
+      ],
+      "default": [
+        "Monitor field conditions regularly",
+        "Check soil moisture before irrigation",
+        "Inspect tea bushes for pest activity"
+      ]
+    },
+    "tasks": {
+      "no_upcoming": "No upcoming tasks",
+      "add_spray_log": "Add a spray log to get started"
+    },
+    "no_detections": "No detections yet",
+    "no_pests_title": "No pests detected"
+  },
+
+  "market": {
+    "location_unavailable_title": "Location unavailable",
+    "location_unavailable_message": "Geolocation not available in this build.",
+    "location_error_title": "Location error",
+    "location_error_message": "Unable to get location",
+    "failed_request_location": "Failed to request location",
+    "open_settings": "Open Settings",
+    "title": "Pesticide Hub",
+    "subtitle": "Plantation supplies & curated teas",
+    "search_placeholder": "Search products or tags",
+    "use_my_location": "Use my location",
+    "back": "Back",
+    "contact_dealer": "Contact Dealer",
+    "open_in_maps": "Open in Maps",
+    "categories": {
+      "all": "All",
+      "black_tea": "Black Tea",
+      "green_tea": "Green Tea",
+      "saplings": "Saplings",
+      "gear": "Gear",
+      "equipment": "Equipment"
+    }
+  },
+
+  "spray": {
+    "title": "Spray Log",
+    "calendar_days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "logs_for": "Logs for {{date}}",
+    "add_log": "+ Add Log",
+    "no_logs": "No logs for this date",
+    "errors": {
+      "title_required": "Title required"
+    },
+    "delete_confirm_title": "Delete",
+    "delete_confirm_message": "Remove this log?",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit_log": "Edit Log",
+    "add_log_title": "Add Log",
+    "placeholder": {
+      "title": "Title (e.g., Spraying North Field)",
+      "time": "Time (HH:MM)",
+      "notes": "Notes"
+    },
+    "save": "Save",
+    "add": "Add"
+  },
+  "orders": {
+    "empty": "No recent orders",
+    "shop_cta": "Shop in Pesticide Hub",
+    "tracking_empty": "No tracking events yet"
+  },
+
+  "weather": {
+    "details_title": "Weather Details",
+    "current_conditions": "Current Conditions",
+    "temperature": "Temperature",
+    "feels_like": "Feels Like",
+    "dew_point": "Dew Point",
+    "today_high": "Today's High",
+    "today_low": "Today's Low",
+    "precipitation": "Precipitation",
+    "rain": "Rain",
+    "showers": "Showers",
+    "snowfall": "Snowfall",
+    "precipitation_hours": "Precipitation Hours",
+    "wind_and_pressure": "Wind & Pressure",
+    "wind_speed": "Wind Speed",
+    "wind_direction": "Wind Direction",
+    "wind_gusts": "Wind Gusts",
+    "pressure": "Pressure",
+    "atmospheric_conditions": "Atmospheric Conditions",
+    "cloud_cover": "Cloud Cover",
+    "humidity": "Humidity",
+    "visibility": "Visibility",
+    "sun": "Sun",
+    "sunrise": "Sunrise",
+    "sunset": "Sunset",
+    "additional_information": "Additional Information",
+    "weather_code": "Weather Code",
+    "last_updated": "Last Updated",
+    "tea_advice_prefix": "Tea advice:"
+  },
+
+  "components": {
+    "drone_banner": {
+      "badge": "Drone Service",
+      "title": "Tea plant Drone Solutions",
+      "description": "Precision spraying and aerial mapping for tea farms.",
+      "pesticide_spraying": "Pesticide Spraying",
+      "aerial_mapping": "Aerial Mapping",
+      "contact_us": "Contact Us"
+    },
+    "product_card": {
+      "tag_prefix": "Tag:"
+    }
+  },
+  "community": {
+    "channels": "Channels",
+    "general": "General",
+    "new_channel_placeholder": "New channel",
+    "type_message_placeholder": "Type a message..."
+  },
+  "pest_infestation": {
+    "heading": "Pest infestation",
+    "help_title": "Help your crop",
+    "step_take": "Take the\npicture",
+    "step_analyse": "Analyse\nPest",
+    "step_recommend": "Our Recommendation",
+    "take_button": "Take picture",
+    "info_heading": "Pest Infestation",
+    "info_sub": "Scan leaves for a quick pest diagnosis and simple recommendations.",
+    "get_help": "Get Help",
+    "advisory_title": "Advisory Contact",
+    "advisory_sub": "Get expert help",
+    "news_title": "Latest Tea News",
+    "news_sub": "Read latest updates",
+    "auction_title": "Auction Prices",
+    "auction_sub": "Latest average auction prices & chart",
+    "recent_heading": "Recent Diagnosis",
+    "severity": {
+      "mild": "Mild",
+      "moderate": "Moderate",
+      "severe": "Severe"
+    }
+  }
+}

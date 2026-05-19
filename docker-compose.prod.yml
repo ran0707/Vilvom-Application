@@ -1,0 +1,108 @@
+version: '3.8'
+
+# Production docker-compose for E2E Networks deployment
+# Usage:
+#   docker-compose -f docker-compose.prod.yml up -d --build
+
+services:
+
+  # ── Nginx reverse proxy ───────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: vilvom_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - yolo
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+
+  # ── NestJS Backend ────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vilvom_backend
+    expose:
+      - "5000"
+    env_file:
+      - ./backend/.env.production
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+    volumes:
+      - backend_uploads:/usr/src/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── YOLO Inference Server ─────────────────────────────────
+  yolo:
+    build:
+      context: ./yolo
+      dockerfile: Dockerfile
+    container_name: vilvom_yolo
+    expose:
+      - "8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MODEL_PATH=/app/idrone_v1.tflite
+    volumes:
+      # Mount model files from host so you can update them without rebuild
+      - ./yolo/idrone_v1.tflite:/app/idrone_v1.tflite:ro
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── MongoDB ───────────────────────────────────────────────
+  mongo:
+    image: mongo:7-jammy
+    container_name: vilvom_mongo
+    expose:
+      - "27017"
+    environment:
+      - MONGO_INITDB_DATABASE=vilvom
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+
+  # ── Redis ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: vilvom_redis
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+volumes:
+  mongo_data:
+  redis_data:
+  backend_uploads:
+
+networks:
+  vilvom_network:
+    driver: bridge

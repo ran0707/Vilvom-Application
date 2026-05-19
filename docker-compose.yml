@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # React Native Metro Bundler (Development Server)
+  metro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vilvom_metro
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+    networks:
+      - vilvom_network
+    command: npm start
+
+  # NestJS Backend Microservices
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vilvom_backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mongodb+srv://mukilan:mukilan@cluster0.c5yb5jt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      - DATABASE_NAME=vilvom_db
+      - JWT_SECRET=vilvom-super-secure-jwt-secret-key-2024-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - API_GATEWAY_PORT=5000
+      - LOG_LEVEL=debug
+    depends_on:
+      - mongo
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+
+  # Python YOLOv8 Tea Leaf Model
+  tea-leaf-model:
+    build:
+      context: ./Tea_Leaf_Model
+      dockerfile: Dockerfile
+    container_name: vilvom_tea_model
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Tea_Leaf_Model:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+
+  # MongoDB Database
+  mongo:
+    image: mongo:7-jammy
+    container_name: vilvom_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=vilvom_db
+    volumes:
+      - mongo_data:/data/db
+      - ./backend/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: vilvom_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - vilvom_network
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  vilvom_network:
+    driver: bridge
