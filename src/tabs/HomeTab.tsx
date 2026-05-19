@@ -509,9 +509,27 @@ const HomeTab = () => {
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return { text: 'Good Morning',  icon: '🌅' };
+    if (hour < 17) return { text: 'Good Afternoon', icon: '☀️' };
+    return { text: 'Good Evening', icon: '🌙' };
+  };
+  const greeting = getGreeting();
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* ── Greeting ───────────────────────────────────────── */}
+        <View style={styles.greetingBlock}>
+          <Text style={styles.greetingText}>
+            {greeting.text}{'  '}{greeting.icon}
+          </Text>
+          <Text style={styles.greetingName}>
+            {user?.name ?? '...'}
+          </Text>
+        </View>
+
         <WeatherSection
           city={city}
           loading={loading}

@@ -3,6 +3,24 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16 },
+
+  /* Greeting block */
+  greetingBlock: {
+    marginTop: 18,
+    marginBottom: 4,
+  },
+  greetingText: {
+    fontSize: 15,
+    color: '#777',
+    fontWeight: '400',
+  },
+  greetingName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111',
+    marginTop: 2,
+  },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
