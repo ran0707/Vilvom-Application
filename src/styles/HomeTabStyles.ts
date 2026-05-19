@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
 
   /* Greeting block */
   greetingBlock: {
-    marginTop: 18,
+    marginTop: 4,
     marginBottom: 4,
   },
   greetingText: {
