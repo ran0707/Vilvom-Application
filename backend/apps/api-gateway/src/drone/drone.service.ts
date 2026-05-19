@@ -23,9 +23,8 @@ export class DroneService {
     'pesticide_spraying',
     'fertilizer_application',
     'field_monitoring',
-    'field_mapping',
+    'crop_mapping',
     'soil_analysis',
-    'crop_mapping'
   ];
 
   async createDroneRequest(
@@ -33,9 +32,6 @@ export class DroneService {
     createDroneRequestDto: CreateDroneRequestDto,
   ) {
     try {
-      if (!DroneService.validServices.includes(createDroneRequestDto.serviceType)) {
-        throw new BadRequestException('Invalid service type');
-      }
       const droneRequest = new this.droneRequestModel({
         userId,
         ...createDroneRequestDto,

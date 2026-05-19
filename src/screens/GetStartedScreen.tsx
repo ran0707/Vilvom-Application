@@ -349,13 +349,13 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     position: 'absolute',
-    top: 30,
+    top: 5,
     left: 0,
-    zIndex: 10,
+    zIndex:1,
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: 200,
+    height: 100,
   },
   shineOverlay: {
     position: 'absolute',

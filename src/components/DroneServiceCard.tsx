@@ -17,7 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 const DroneBannerCard = () => {
   const navigation = useNavigation<any>();
   const handleContactPress = () => {
-    navigation.navigate('DroneContact');
+    navigation.navigate('Drone');
   };
 
   return (
@@ -75,16 +75,17 @@ const DroneBannerCard = () => {
             style={styles.contactButton}
             onPress={handleContactPress}
           >
-            <Text style={styles.contactText}>Contact Us</Text>
+            <Text style={styles.contactText}>for more info </Text>
           </TouchableOpacity>
         </View>
 
         {/* Right Image */}
         <View style={styles.rightImageContainer}>
           <Image
-            source={{
-              uri: 'https://static.vecteezy.com/system/resources/previews/057/930/612/non_2x/front-view-camera-drone-free-png.png',
-            }}
+            // source={{
+            //   uri: 'https://static.vecteezy.com/system/resources/previews/057/930/612/non_2x/front-view-camera-drone-free-png.png',
+            // }}
+            source={require('../../assets/bg-drone.png')}
             style={styles.droneImage}
             resizeMode="contain"
           />

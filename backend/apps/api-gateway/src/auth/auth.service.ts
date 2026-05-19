@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { User, UserDocument } from '@app/database';
 import { OtpService } from './otp.service';
+import { ADMIN_PHONES } from '../admin/admin.config';
 
 @Injectable()
 export class AuthService {
@@ -68,8 +69,9 @@ export class AuthService {
       await user.save();
     }
 
-    // Generate JWT token
-    const payload = { sub: user._id, phone: user.phoneNumber };
+    // Generate JWT token — include role so guards can check it
+    const isAdmin = ADMIN_PHONES.includes(normalizedPhone);
+    const payload = { sub: user._id, phone: user.phoneNumber, role: isAdmin ? 'admin' : 'user' };
     const token = this.jwtService.sign(payload);
 
     // Clean OTP after successful verification
@@ -78,6 +80,7 @@ export class AuthService {
     return {
       message: 'Authentication successful',
       token,
+      isAdmin,
       user: user.toJSON(),
     };
   }

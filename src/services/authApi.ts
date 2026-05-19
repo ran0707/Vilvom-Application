@@ -11,6 +11,7 @@ export interface User {
   phone?: string;
   isPhoneVerified?: boolean;
   isDeviceBound?: boolean;
+  isAdmin?: boolean;
   profileInfo?: {
     fullName?: string;
     dateOfBirth?: string;
@@ -202,7 +203,8 @@ export const verifyOtp = async (
     }
 
     if (data.user) {
-      await setUserData(data.user);
+      // Persist isAdmin flag alongside user data so the app can route correctly
+      await setUserData({ ...data.user, isAdmin: data.isAdmin ?? false });
     }
 
     return data;

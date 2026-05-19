@@ -26,6 +26,7 @@ import ChangePasswordScreen      from '../screens/ChangePasswordScreen';
 import ForgotPasswordScreen      from '../screens/ForgotPasswordScreen';
 import BecomeSellerScreen        from '../screens/BecomeSellerScreen';
 import EditProfileScreen         from '../screens/EditProfileScreen';
+import AdminNavigator            from './AdminNavigator';
 
 const Stack = createStackNavigator();
 
@@ -36,14 +37,17 @@ const SplashEntry = ({ navigation }: any) => {
     const run = async () => {
       const start = Date.now();
       try {
-        // Fast local check — no network call, no hang
         const token = await AsyncStorage.getItem('authToken');
-        const dest = token ? 'MainTabs' : 'GetStarted';
-        const elapsed = Date.now() - start;
-        const delay = Math.max(2000 - elapsed, 0);
-        setTimeout(() => {
-          if (!cancelled) navigation.replace(dest);
-        }, delay);
+        if (!token) {
+          const delay = Math.max(2000 - (Date.now() - start), 0);
+          setTimeout(() => { if (!cancelled) navigation.replace('GetStarted'); }, delay);
+          return;
+        }
+        const userDataStr = await AsyncStorage.getItem('userData');
+        const userData = userDataStr ? JSON.parse(userDataStr) : null;
+        const dest  = userData?.isAdmin ? 'AdminPanel' : 'MainTabs';
+        const delay = Math.max(2000 - (Date.now() - start), 0);
+        setTimeout(() => { if (!cancelled) navigation.replace(dest); }, delay);
       } catch {
         setTimeout(() => {
           if (!cancelled) navigation.replace('GetStarted');
@@ -93,6 +97,7 @@ const AppNavigator = () => (
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="BecomeSeller"   component={BecomeSellerScreen} />
       <Stack.Screen name="EditProfile"    component={EditProfileScreen} />
+      <Stack.Screen name="AdminPanel"      component={AdminNavigator} />
     </Stack.Navigator>
   </NavigationContainer>
 );

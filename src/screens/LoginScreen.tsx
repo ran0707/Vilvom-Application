@@ -13,7 +13,7 @@ import {
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { OtpInput } from 'react-native-otp-entry';
 import { useNavigation } from '@react-navigation/native';
-import { requestLoginOtp, verifyOtp } from '../services/authApi';
+import { requestLoginOtp, requestOtp, verifyOtp } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
@@ -50,14 +50,20 @@ const LoginScreen = () => {
     setLoading(true);
     try {
       await requestLoginOtp(phone.trim());
-      setOtpSent(true);
-      startCountdown();
-      Alert.alert('Success', 'OTP sent to your phone number!');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to send OTP');
-    } finally {
-      setLoading(false);
+      if (err.message?.includes('not found') || err.message?.includes('register')) {
+        // First-time login (e.g. admin number not yet in DB) — fall back to signup OTP
+        await requestOtp(phone.trim());
+      } else {
+        Alert.alert('Error', err.message || 'Failed to send OTP');
+        setLoading(false);
+        return;
+      }
     }
+    setOtpSent(true);
+    startCountdown();
+    Alert.alert('Success', 'OTP sent to your phone number!');
+    setLoading(false);
   };
 
   const handleVerifyOtp = async () => {
@@ -80,10 +86,11 @@ const LoginScreen = () => {
         login(response.token, response.user);
       }
 
+      const dest = (response as any).isAdmin ? 'AdminPanel' : 'MainTabs';
       Alert.alert('Success', 'Logged in successfully', [
         {
           text: 'OK',
-          onPress: () => (navigation as any).replace('MainTabs'),
+          onPress: () => (navigation as any).replace(dest),
         },
       ]);
     } catch (err: any) {
@@ -95,9 +102,9 @@ const LoginScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.topWave}>
+      {/* <View style={styles.topWave}>
         <View style={styles.curveBackground} />
-      </View>
+      </View> */}
 
       {/* Back button to GetStarted */}
       <TouchableOpacity
@@ -107,7 +114,7 @@ const LoginScreen = () => {
         <MaterialIcons name="arrow-back" size={22} color="#333" />
       </TouchableOpacity>
 
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>Welcome Back</Text>
       <Text style={styles.subtitle}>
         {!otpSent
           ? 'Enter your registered phone number'
@@ -221,18 +228,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
   },
-  topWave: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  curveBackground: {
-    height: 160,
-    width: width,
-    backgroundColor: '#4CAF50',
-    borderBottomLeftRadius: width * 0.3,
-    borderBottomRightRadius: width * 0.3,
-  },
+  // topWave: {
+  //   position: 'absolute',
+  //   top: 0,
+  //   left: 0,
+  // },
+  // curveBackground: {
+  //   height: 160,
+  //   width: width,
+  //   backgroundColor: '#4CAF50',
+  //   borderBottomLeftRadius: width * 0.3,
+  //   borderBottomRightRadius: width * 0.3,
+  // },
   title: {
     fontSize: 26,
     fontWeight: '600',
@@ -287,15 +294,8 @@ const styles = StyleSheet.create({
     left: 16,
     width: 36,
     height: 36,
-    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
   },
   otpContainer: {
     marginBottom: 20,

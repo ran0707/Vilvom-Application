@@ -40,8 +40,7 @@ const PestInfestationCard: React.FC<Props> = ({ onScan, onLearnMore }) => {
             numberOfLines={2}
             ellipsizeMode={'tail'}
           >
-            Scan tea leaves for early pest signs. AI-powered detection gives
-            instant insights & solutions.
+            Scan tea leaves for early pest signs with instant AI insights.
           </Text>
 
           {/* Quick Features */}
@@ -70,9 +69,10 @@ const PestInfestationCard: React.FC<Props> = ({ onScan, onLearnMore }) => {
         {/* Right Image */}
         <View style={styles.rightImageContainer}>
           <Image
-            source={{
-              uri: 'https://cdn-icons-png.flaticon.com/512/2900/2900497.png',
-            }}
+            // source={{
+            //   uri: 'https://cdn-icons-png.flaticon.com/512/2900/2900497.png',
+            // }}
+            source={require('../../assets/scan_1.png')}
             style={styles.leafImage}
             resizeMode="contain"
           />
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: 13,
-    marginBottom: 10,
+    marginBottom: 15,
     fontWeight: '400',
   },
 
@@ -201,19 +201,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  rightImageContainer: {
-    width: 80,
-    height: 90,
-    position: 'relative',
+rightImageContainer: {
+    width: 110,            // Increased from 80 to 110 to give the asset more horizontal space
+    height: 140,           // Adjusted to fit cleanly under the badge area
+    position: 'absolute',  // Changed to absolute to allow it to expand without squishing the left content
+    right: 5,              // Positions it nicely against the right edge
+    bottom: 10,            // Pins it near the bottom of the green card
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    marginRight: 10,
   },
 
   leafImage: {
-    width: 100,
-    height: 90,
+    width: '100%',         // Tells the image to take up the full expanded width of the container
+    height: '100%',        // Tells the image to take up the full expanded height of the container
     zIndex: 2,
   },
 });

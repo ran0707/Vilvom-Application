@@ -1,47 +1,62 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { TouchableOpacity, View, StyleSheet, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import HomeTab from '../tabs/HomeTab';
 import ProfileTab from '../tabs/ProfileTab';
 import MarketTab from '../tabs/MarketTab';
 import SprayTab from '../tabs/Spray';
-import CommunityScreen from '../screens/CommunityScreen';
-import Icon from 'react-native-vector-icons/FontAwesome5';
+import DroneTab from '../tabs/DroneTab';
+// Community is temporarily disabled — keeping import for future re-enable
+// import CommunityScreen from '../screens/CommunityScreen';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Tab = createBottomTabNavigator();
 
+const ICON_SIZE = 25;
+
+type TabIconProps = { color: string; focused: boolean };
+
+const homeIcon      = ({ color }: TabIconProps) => <MaterialCommunityIcons name="home-outline"          size={ICON_SIZE} color={color} />;
+const marketIcon    = ({ color }: TabIconProps) => <MaterialCommunityIcons name="leaf-circle-outline"   size={ICON_SIZE} color={color} />;
+const droneIcon     = ({ color }: TabIconProps) => <MaterialCommunityIcons name="quadcopter"            size={ICON_SIZE} color={color} />;
+const sprayIcon     = ({ color }: TabIconProps) => <MaterialCommunityIcons name="water-outline"         size={ICON_SIZE} color={color} />;
+const profileIcon   = ({ color }: TabIconProps) => <MaterialCommunityIcons name="account-outline"       size={ICON_SIZE} color={color} />;
+
 const BottomTabs = () => {
   const { t } = useTranslation();
+
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
-          // Skip icon mapping for the center Scan tab (we handle it via custom button)
-          if (route.name === 'Scan') return null;
-          let iconName = '';
-          if (route.name === 'Home') iconName = 'home';
-          else if (route.name === 'PesticideHub') iconName = 'leaf';
-          else if (route.name === 'Spray log') iconName = 'spray-can';
-          else if (route.name === 'Profile') iconName = 'user';
-          return <Icon name={iconName} size={size} color={color} solid />;
-        },
+      screenOptions={{
         tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: 'gray',
+        tabBarInactiveTintColor: '#9E9E9E',
         headerShown: false,
         tabBarStyle: {
-          height: Platform.OS === 'android' ? 60 : 80,
-          paddingBottom: Platform.OS === 'android' ? 8 : 20,
+          height: Platform.OS === 'android' ? 72 : 90,
+          paddingBottom: Platform.OS === 'android' ? 16 : 32,
+          paddingTop: 4,
+          borderTopWidth: 1,
+          borderTopColor: '#F0F0F0',
+          elevation: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 6,
         },
-      })}
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
+        },
+      }}
     >
       <Tab.Screen
         name="Home"
         component={HomeTab}
         options={{
-          headerShown: false,
           title: t('nav.main_tabs') as string,
           tabBarLabel: t('nav.main_tabs') as string,
+          tabBarIcon: homeIcon,
         }}
       />
       <Tab.Screen
@@ -50,17 +65,16 @@ const BottomTabs = () => {
         options={{
           title: t('market.title') as string,
           tabBarLabel: t('market.title') as string,
+          tabBarIcon: marketIcon,
         }}
       />
       <Tab.Screen
-        name="Community"
-        component={CommunityScreen}
+        name="Drone"
+        component={DroneTab}
         options={{
-          title: 'Community',
-          tabBarLabel: 'Community',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="comments" size={size} color={color} solid />
-          ),
+          title: 'Drone',
+          tabBarLabel: 'Drone',
+          tabBarIcon: droneIcon,
         }}
       />
       <Tab.Screen
@@ -69,6 +83,7 @@ const BottomTabs = () => {
         options={{
           title: t('spray.title') as string,
           tabBarLabel: t('spray.title') as string,
+          tabBarIcon: sprayIcon,
         }}
       />
       <Tab.Screen
@@ -77,6 +92,7 @@ const BottomTabs = () => {
         options={{
           title: t('profile.title') as string,
           tabBarLabel: t('profile.title') as string,
+          tabBarIcon: profileIcon,
         }}
       />
     </Tab.Navigator>
@@ -84,25 +100,3 @@ const BottomTabs = () => {
 };
 
 export default BottomTabs;
-
-const styles = StyleSheet.create({
-  scanWrapper: {
-    top: -18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  scanButton: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: '#4CAF50',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#4285F4',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-});

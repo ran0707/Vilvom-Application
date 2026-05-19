@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { PestModule } from './pest/pest.module';
 import { DroneModule } from './drone/drone.module';
+import { SprayLogModule } from './spray-log/spray-log.module';
+import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -25,6 +27,8 @@ import { HealthController } from './health/health.controller';
     UserModule,
     PestModule,
     DroneModule,
+    SprayLogModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

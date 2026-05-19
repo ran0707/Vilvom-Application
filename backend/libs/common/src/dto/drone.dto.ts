@@ -1,90 +1,60 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsObject, ValidateNested } from 'class-validator';
+import {
+  IsString, IsNumber, IsOptional, IsEnum, IsDateString,
+  IsObject, ValidateNested, IsArray,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-class LocationDto {
-  @ApiProperty({ description: 'Location type', example: 'Point' })
-  @IsString()
-  type: string;
-
-  @ApiProperty({ description: 'Coordinates [longitude, latitude]', example: [80.2707, 13.0827] })
-  @IsNumber({}, { each: true })
-  coordinates: [number, number];
+class AreaDto {
+  @ApiPropertyOptional() @IsOptional() @IsString() farmName?: string;
+  @ApiProperty()         @IsString()              location: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() areaSize?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() areaUnit?: string;
 }
 
 export class CreateDroneRequestDto {
-  @ApiProperty({ 
-    description: 'Type of drone service requested',
-    enum: ['pest_spraying', 'fertilizer_application', 'field_monitoring', 'crop_mapping', 'soil_analysis'],
-    example: 'pest_spraying'
+  @ApiProperty({
+    enum: ['pesticide_spraying', 'fertilizer_application', 'field_monitoring', 'crop_mapping', 'soil_analysis'],
   })
-  @IsEnum(['pest_spraying', 'fertilizer_application', 'field_monitoring', 'crop_mapping', 'soil_analysis'])
+  @IsString()
   serviceType: string;
 
-  @ApiProperty({ description: 'Field area in acres', example: 2.5 })
-  @IsNumber()
-  fieldArea: number;
-
-  @ApiProperty({ description: 'Field location', type: LocationDto })
-  @ValidateNested()
-  @Type(() => LocationDto)
-  location: LocationDto;
-
-  @ApiPropertyOptional({ description: 'Preferred service date', example: '2024-01-20T10:00:00Z' })
-  @IsOptional()
+  @ApiProperty()
   @IsDateString()
-  scheduledDate?: string;
+  preferredDate: string;
 
-  @ApiProperty({ 
-    description: 'Service urgency level',
-    enum: ['low', 'medium', 'high'],
-    example: 'medium'
-  })
-  @IsEnum(['low', 'medium', 'high'])
-  urgency: string;
-
-  @ApiPropertyOptional({ description: 'Additional notes or requirements' })
-  @IsOptional()
+  @ApiProperty()
   @IsString()
-  notes?: string;
+  preferredTime: string;
 
-  @ApiPropertyOptional({ description: 'Specific pest type (for pest spraying)' })
-  @IsOptional()
-  @IsString()
-  pestType?: string;
+  @ApiProperty({ type: AreaDto })
+  @ValidateNested()
+  @Type(() => AreaDto)
+  area: AreaDto;
 
-  @ApiPropertyOptional({ description: 'Field conditions and accessibility' })
-  @IsOptional()
-  @IsString()
-  fieldConditions?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() cropType?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() additionalNotes?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customService?: string;
 
-  @ApiPropertyOptional({ description: 'Contact information for service' })
+  @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'] })
   @IsOptional()
-  @IsObject()
-  contactInfo?: {
-    name: string;
-    phone: string;
-    alternatePhone?: string;
-  };
+  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  urgency?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsString() guestName?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() guestPhone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() guestEmail?: string;
 }
 
 export class UpdateDroneRequestDto {
-  @ApiPropertyOptional({ description: 'Updated service date' })
-  @IsOptional()
-  @IsDateString()
-  scheduledDate?: string;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() scheduledDate?: string;
 
-  @ApiPropertyOptional({ description: 'Updated urgency level' })
-  @IsOptional()
-  @IsEnum(['low', 'medium', 'high'])
-  urgency?: string;
+  @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'] })
+  @IsOptional() @IsEnum(['low', 'medium', 'high', 'urgent']) urgency?: string;
 
-  @ApiPropertyOptional({ description: 'Updated notes' })
-  @IsOptional()
-  @IsString()
-  notes?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
 
-  @ApiPropertyOptional({ description: 'Request status' })
+  @ApiPropertyOptional({ enum: ['pending', 'accepted', 'in_progress', 'completed', 'cancelled'] })
   @IsOptional()
   @IsEnum(['pending', 'accepted', 'in_progress', 'completed', 'cancelled'])
   status?: string;

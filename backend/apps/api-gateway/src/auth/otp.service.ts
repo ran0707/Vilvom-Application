@@ -33,15 +33,8 @@ export class OtpService {
   }
 
   async sendOtp(phone: string, otp: string): Promise<void> {
-    // In development, log OTP to console
-    if (this.configService.get('NODE_ENV') === 'development') {
-      console.log(`📱 OTP for ${phone}: ${otp}`);
-      return;
-    }
-
-    // TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
-    // For now, just log it
-    console.log(`SMS sent to ${phone}: Your Vilvom verification code is ${otp}`);
+    // Always log OTP — replace this block with a real SMS provider when ready
+    console.log(`\n📱 OTP for ${phone}: ${otp}\n`);
   }
 
   async verifyOtp(phone: string, inputOtp: string): Promise<boolean> {

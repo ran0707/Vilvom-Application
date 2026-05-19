@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { DroneRequest, DroneRequestSchema } from '@app/database';
-import { DroneController } from './drone.controller';
-import { DroneService } from './drone.service';
+import { SprayLog, SprayLogSchema } from '@app/database';
+import { SprayLogController } from './spray-log.controller';
+import { SprayLogService } from './spray-log.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: DroneRequest.name, schema: DroneRequestSchema }]),
+    MongooseModule.forFeature([{ name: SprayLog.name, schema: SprayLogSchema }]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -19,8 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
       inject: [ConfigService],
     }),
   ],
-  controllers: [DroneController],
-  providers: [DroneService, JwtAuthGuard],
-  exports: [DroneService],
+  controllers: [SprayLogController],
+  providers: [SprayLogService, JwtAuthGuard],
 })
-export class DroneModule {}
+export class SprayLogModule {}

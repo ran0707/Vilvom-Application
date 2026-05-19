@@ -71,15 +71,21 @@ const SignupScreen = () => {
       if (response.token && response.user) {
         login(response.token, response.user);
       }
+      const dest = (response as any).isAdmin ? 'AdminPanel' : 'MainTabs';
       Alert.alert('Success', 'Phone verified successfully!', [
         {
           text: 'OK',
-          onPress: () =>
-            Alert.alert(
-              'Account Security',
-              'Your account is now bound to this device for security.',
-              [{ text: 'Understood', onPress: () => (navigation as any).replace('MainTabs') }],
-            ),
+          onPress: () => {
+            if (dest === 'AdminPanel') {
+              (navigation as any).replace('AdminPanel');
+            } else {
+              Alert.alert(
+                'Account Security',
+                'Your account is now bound to this device for security.',
+                [{ text: 'Understood', onPress: () => (navigation as any).replace('MainTabs') }],
+              );
+            }
+          },
         },
       ]);
     } catch (error: any) {
