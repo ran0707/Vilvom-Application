@@ -90,6 +90,10 @@ export class VerifyOtpDto {
   @IsString()
   otp: string;
 
+  @IsString()
+  @IsOptional()
+  name?: string;
+
   @IsObject()
   @IsOptional()
   deviceInfo?: {
@@ -98,6 +102,27 @@ export class VerifyOtpDto {
     systemVersion: string;
     appVersion: string;
     platform: string;
+  };
+}
+
+export class UpdateProfileDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @IsObject()
+  @IsOptional()
+  profileInfo?: {
+    fullName?: string;
+    dateOfBirth?: string;
+    address?: string;
+    occupation?: string;
+    bio?: string;
+    profileImage?: string;
   };
 }
 

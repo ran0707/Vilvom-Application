@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { OtpInput } from 'react-native-otp-entry';
 import { useNavigation } from '@react-navigation/native';
-import { requestOtp, verifyOtp, updateUserProfile } from '../services/authApi';
+import { requestOtp, verifyOtp } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
 
 const SignupScreen = () => {
@@ -66,17 +66,10 @@ const SignupScreen = () => {
     }
     setLoading(true);
     try {
-      const response = await verifyOtp(phone.trim(), otp.trim());
+      // name is sent directly to backend — saved on user creation/update
+      const response = await verifyOtp(phone.trim(), otp.trim(), name.trim());
       if (response.token && response.user) {
         login(response.token, response.user);
-        // Save the name the user entered to their profile
-        if (name.trim()) {
-          try {
-            await updateUserProfile(name.trim());
-          } catch (_) {
-            // non-critical — profile update can be done later
-          }
-        }
       }
       Alert.alert('Success', 'Phone verified successfully!', [
         {
@@ -104,13 +97,16 @@ const SignupScreen = () => {
           style={styles.backBtn}
           onPress={() => (navigation as any).navigate('GetStarted')}
         >
-          <MaterialIcons name="arrow-back" size={22} color="#333" />
+          <MaterialIcons name="arrow-back" size={26} color="#333" />
         </TouchableOpacity>
-        <Image
-          source={require('../../assets/logo.png')}
-          style={styles.headerLogo}
-          resizeMode="contain"
-        />
+        
+        <View style={styles.logoWrapper}>
+          <Image
+            source={require('../../assets/vilvom_logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+        </View>
       </View>
 
       {/* ── Scrollable body ───────────────────────────────── */}
@@ -230,33 +226,43 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 
-  /* Header */
+  /* Header Fixed Layout */
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 4,
-    paddingBottom: 4,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    height: 100, // Explicit bounded height for the header container
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    position: 'relative',
+  },
+  logoWrapper: {
+    width: 180, // Correct alignment structure box
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backBtn: {
-    padding: 8,
-    marginRight: 8,
+    position: 'absolute',
+    left: 16,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    padding: 4,
   },
   headerLogo: {
-    width: 100,
-    height: 180,
+    width: 180,  // Restored target width configuration
+    height: 100, // Restored target height configuration
   },
 
-  /* Body */
+  /* Body Layout */
   container: {
     flexGrow: 1,
     alignItems: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 16, // Reduced to sit neatly right below the header bounds
     paddingBottom: 24,
   },
   title: {

@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Put,
   Body,
   Get,
   UseGuards,
@@ -16,6 +17,7 @@ import {
   RequestOtpDto,
   VerifyOtpDto,
   ChangePasswordDto,
+  UpdateProfileDto,
 } from '@app/common';
 
 @ApiTags('Authentication')
@@ -44,6 +46,7 @@ export class AuthController {
       verifyOtpDto.phone,
       verifyOtpDto.otp,
       verifyOtpDto.deviceInfo,
+      verifyOtpDto.name,
     );
   }
 
@@ -64,6 +67,17 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@Request() req) {
     return this.authService.getProfile(req.user.sub);
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user profile (name, email, profileInfo)' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(@Body() updateProfileDto: UpdateProfileDto, @Request() req) {
+    return this.authService.updateProfile(req.user.sub, updateProfileDto);
   }
 
   @Post('change-password')

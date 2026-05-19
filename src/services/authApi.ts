@@ -176,6 +176,7 @@ export const requestOtp = async (phone: string): Promise<OtpResponse> => {
 export const verifyOtp = async (
   phone: string,
   otp: string,
+  name?: string,
 ): Promise<AuthResponse> => {
   try {
     // Get device info for device binding
@@ -186,7 +187,7 @@ export const verifyOtp = async (
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ phone, otp, deviceInfo }),
+      body: JSON.stringify({ phone, otp, deviceInfo, name }),
     });
 
     const data = await response.json();

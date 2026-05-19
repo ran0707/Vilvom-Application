@@ -34,10 +34,10 @@ export class AuthService {
     };
   }
 
-  async verifyOtp(phone: string, otp: string, deviceInfo?: any) {
+  async verifyOtp(phone: string, otp: string, deviceInfo?: any, name?: string) {
     // Normalize phone number format
     const normalizedPhone = this.normalizePhoneNumber(phone);
-    
+
     // Verify OTP
     const isValid = await this.otpService.verifyOtp(normalizedPhone, otp);
     if (!isValid) {
@@ -47,10 +47,10 @@ export class AuthService {
     let user = await this.userModel.findOne({ phoneNumber: normalizedPhone });
 
     if (!user) {
-      // Create new user
+      // Create new user — use provided name or fall back to last-4-digits placeholder
       user = new this.userModel({
         phoneNumber: normalizedPhone,
-        name: `User-${normalizedPhone.slice(-4)}`,
+        name: name?.trim() || `User-${normalizedPhone.slice(-4)}`,
         isPhoneVerified: true,
         deviceInfo,
         isDeviceBound: true,
@@ -60,6 +60,7 @@ export class AuthService {
       // Update existing user
       user.isPhoneVerified = true;
       user.lastLogin = new Date();
+      if (name?.trim()) user.name = name.trim();
       if (deviceInfo) {
         user.deviceInfo = deviceInfo;
         user.isDeviceBound = true;
@@ -109,6 +110,20 @@ export class AuthService {
     return {
       user: user.toJSON(),
     };
+  }
+
+  async updateProfile(userId: string, updates: { name?: string; email?: string; profileInfo?: any }) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    if (updates.name?.trim()) user.name = updates.name.trim();
+    if (updates.email?.trim()) user.email = updates.email.trim();
+    if (updates.profileInfo) {
+      user.profileInfo = { ...(user.profileInfo || {}), ...updates.profileInfo };
+    }
+
+    await user.save();
+    return { message: 'Profile updated successfully', user: user.toJSON() };
   }
 
   async changePassword(
