@@ -512,12 +512,6 @@ const HomeTab = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <HeaderSection
-          avatarUrl={avatarUrl}
-          user={user}
-          showNotifications={showNotifications}
-        />
-
         <WeatherSection
           city={city}
           loading={loading}

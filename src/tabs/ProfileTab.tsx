@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -14,6 +16,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
 import {
   getUserProfile,
+  updateUserProfile,
   logout,
   isAuthenticated,
   User,
@@ -38,6 +41,9 @@ const ProfileTab = () => {
   const [points, setPoints] = useState<FieldPoint[]>([]);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [notificationVisible, setNotificationVisible] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [savingName, setSavingName] = useState(false);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -108,6 +114,20 @@ const ProfileTab = () => {
     }
   };
 
+  const handleSaveName = async () => {
+    if (!editedName.trim()) return;
+    setSavingName(true);
+    try {
+      await updateUserProfile(editedName.trim());
+      setUser(prev => prev ? { ...prev, name: editedName.trim() } : prev);
+      setIsEditingName(false);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to update name');
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   // Load stored heatmap points (if any) or provide a small demo dataset so the UI isn't empty
   useEffect(() => {
     (async () => {
@@ -171,27 +191,47 @@ const ProfileTab = () => {
             style={styles.profileImage}
           />
         </View>
-        <Text style={styles.name}>
-          {user
-            ? user.profileInfo?.fullName || user.name || t('profile.title')
-            : t('profile.title')}
-        </Text>
+        {/* Editable username */}
+        {isEditingName ? (
+          <View style={styles.nameEditRow}>
+            <TextInput
+              style={styles.nameInput}
+              value={editedName}
+              onChangeText={setEditedName}
+              autoFocus
+              selectTextOnFocus
+              placeholderTextColor="#ccc"
+            />
+            <TouchableOpacity onPress={handleSaveName} disabled={savingName} style={styles.nameActionBtn}>
+              {savingName
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <MaterialIcons name="check" size={20} color="#fff" />}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsEditingName(false)} style={[styles.nameActionBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+              <MaterialIcons name="close" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.nameRow}
+            onPress={() => {
+              const currentName = user?.profileInfo?.fullName || user?.name || '';
+              setEditedName(currentName);
+              setIsEditingName(true);
+            }}
+          >
+            <Text style={styles.name}>
+              {user
+                ? user.profileInfo?.fullName || user.name || t('profile.title')
+                : t('profile.title')}
+            </Text>
+            <MaterialIcons name="edit" size={16} color="rgba(255,255,255,0.8)" style={{ marginLeft: 6 }} />
+          </TouchableOpacity>
+        )}
+
         <Text style={styles.subText}>
           {user ? user.email || user.phone || '' : ''}
         </Text>
-
-        {/* Edit Profile Button */}
-        {/* {user && (
-          <TouchableOpacity
-            style={styles.editProfileButton}
-            onPress={() => (navigation as any).navigate('EditProfile')}
-          >
-            <MaterialIcons name="edit" size={16} color="#4CAF50" />
-            <Text style={styles.editProfileText}>Edit Profile</Text>
-          </TouchableOpacity>
-        )} */}
-
-        {/* sign-up prompt removed for guest users (guest flow disabled) */}
       </View>
 
       {/* Status Card */}
@@ -321,10 +361,36 @@ const styles = StyleSheet.create({
     width: 70,
     borderRadius: 35,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   name: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  nameEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 6,
+  },
+  nameInput: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#fff',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    minWidth: 160,
+  },
+  nameActionBtn: {
+    backgroundColor: '#388E3C',
+    borderRadius: 16,
+    padding: 4,
   },
   subText: {
     fontSize: 14,
