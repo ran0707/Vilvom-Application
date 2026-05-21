@@ -5,14 +5,25 @@ import React, {
   useState,
   ReactNode,
 } from 'react';
-import { AppState } from 'react-native';
 import {
   getStoredAuthToken,
   getStoredUserData,
   logout,
   User,
 } from '../services/authApi';
-import { passwordStatusMonitor } from '../services/passwordStatusMonitor';
+
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const payloadB64 = token.split('.')[1];
+    if (!payloadB64) return true;
+    const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+    const json = Buffer.from(base64, 'base64').toString('utf8');
+    const { exp } = JSON.parse(json);
+    return typeof exp !== 'number' || Date.now() >= (exp - 10) * 1000;
+  } catch {
+    return true;
+  }
+};
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -44,14 +55,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Initialize auth state from storage
+  // Initialize auth state from storage using local JWT expiry check (no network)
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         const storedToken = await getStoredAuthToken();
         const storedUser = await getStoredUserData();
 
-        if (storedToken && storedUser) {
+        if (storedToken && storedUser && !isTokenExpired(storedToken)) {
           setToken(storedToken);
           setUser(storedUser);
           setIsAuthenticated(true);
@@ -66,33 +77,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Monitor authentication state and manage password status checking
-  useEffect(() => {
-    // Only start password monitoring after initial loading is complete
-    if (!loading) {
-      if (isAuthenticated) {
-        // Start password status monitoring when user is authenticated
-        passwordStatusMonitor.schedulePasswordCheck();
-
-        // Listen for app state changes to check password status on app focus
-        const handleAppStateChange = (nextAppState: string) => {
-          passwordStatusMonitor.handleAppStateChange(nextAppState);
-        };
-
-        const subscription = AppState.addEventListener(
-          'change',
-          handleAppStateChange,
-        );
-
-        return () => {
-          subscription?.remove();
-        };
-      } else {
-        // Stop password monitoring when user is not authenticated
-        passwordStatusMonitor.stopPasswordCheck();
-      }
-    }
-  }, [isAuthenticated, loading]);
 
   const login = (authToken: string, userData: User) => {
     setToken(authToken);

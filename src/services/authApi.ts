@@ -368,39 +368,18 @@ export const logout = async (): Promise<void> => {
   }
 };
 
-// Check if user is authenticated
+// Check if user is authenticated — local JWT decode only, no network, never clears storage
 export const isAuthenticated = async (): Promise<boolean> => {
   try {
     const token = await getAuthToken();
-    if (!token) {
-      return false;
-    }
-
-    // Make a lightweight API call to verify token is still valid
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (response.status === 401) {
-      // Token is invalid, clear stored data
-      await clearStoredData();
-      return false;
-    }
-
-    return response.ok;
-  } catch (error) {
-    // If there's a network error or timeout, assume user is authenticated if they have a token
-    // This prevents logout during network issues
+    if (!token) return false;
+    const payloadB64 = token.split('.')[1];
+    if (!payloadB64) return false;
+    const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+    const json = Buffer.from(base64, 'base64').toString('utf8');
+    const { exp } = JSON.parse(json);
+    return typeof exp === 'number' && Date.now() < (exp - 10) * 1000;
+  } catch {
     const token = await getAuthToken();
     return !!token;
   }
