@@ -29,30 +29,62 @@ import AdminNavigator            from './AdminNavigator';
 
 const Stack = createStackNavigator();
 
-// Splash screen that handles auth check + navigation itself
+// Decode JWT payload without a library — works offline, no network needed
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const payloadB64 = token.split('.')[1];
+    if (!payloadB64) return true;
+    // base64url → base64
+    const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+    const json = Buffer.from(base64, 'base64').toString('utf8');
+    const { exp } = JSON.parse(json);
+    // exp is in seconds; give a 10-second grace window
+    return typeof exp !== 'number' || Date.now() >= (exp - 10) * 1000;
+  } catch {
+    return true; // malformed token → treat as expired
+  }
+};
+
+// Splash: check persisted session and route immediately — no login prompt for existing users
 const SplashEntry = ({ navigation }: any) => {
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
       const start = Date.now();
+      const minSplash = 2000;
+
       try {
         const token = await AsyncStorage.getItem('authToken');
+
+        // No token → first install or logged out → show GetStarted
         if (!token) {
-          const delay = Math.max(2000 - (Date.now() - start), 0);
+          const delay = Math.max(minSplash - (Date.now() - start), 0);
           setTimeout(() => { if (!cancelled) navigation.replace('GetStarted'); }, delay);
           return;
         }
+
+        // Token exists but is expired → clear storage → force re-login
+        if (isTokenExpired(token)) {
+          await AsyncStorage.multiRemove(['authToken', 'userData']);
+          const delay = Math.max(minSplash - (Date.now() - start), 0);
+          setTimeout(() => { if (!cancelled) navigation.replace('GetStarted'); }, delay);
+          return;
+        }
+
+        // Valid token → skip auth screens entirely
         const userDataStr = await AsyncStorage.getItem('userData');
         const userData = userDataStr ? JSON.parse(userDataStr) : null;
-        const dest  = userData?.isAdmin ? 'AdminPanel' : 'MainTabs';
-        const delay = Math.max(2000 - (Date.now() - start), 0);
+        const dest = userData?.isAdmin ? 'AdminPanel' : 'MainTabs';
+        const delay = Math.max(minSplash - (Date.now() - start), 0);
         setTimeout(() => { if (!cancelled) navigation.replace(dest); }, delay);
+
       } catch {
-        setTimeout(() => {
-          if (!cancelled) navigation.replace('GetStarted');
-        }, 2000);
+        // Storage read failed — safe fallback: go to GetStarted
+        const delay = Math.max(minSplash - (Date.now() - start), 0);
+        setTimeout(() => { if (!cancelled) navigation.replace('GetStarted'); }, delay);
       }
     };
+
     run();
     return () => { cancelled = true; };
   }, [navigation]);
