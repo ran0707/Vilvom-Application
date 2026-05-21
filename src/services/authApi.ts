@@ -34,6 +34,7 @@ export interface AuthResponse {
 export interface OtpResponse {
   message: string;
   phone: string;
+  otp?: string; // returned by backend for in-app notification; removed once SMS is integrated
 }
 
 export interface PasswordStatusResponse {

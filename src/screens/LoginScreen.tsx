@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { requestLoginOtp, verifyOtp } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
 import LeafButton from '../components/LeafButton';
+import { sendOtpNotification } from '../services/appNotificationService';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 const LoginScreen = () => {
@@ -44,9 +45,10 @@ const LoginScreen = () => {
     }
     setLoading(true);
     try {
-      await requestLoginOtp(phone.trim());
+      const res = await requestLoginOtp(phone.trim());
       setOtpSent(true);
       startCountdown();
+      if (res?.otp) sendOtpNotification(res.otp, phone.trim());
       Alert.alert('OTP Sent', 'Enter the 6-digit code sent to your phone');
     } catch (err: any) {
       const msg: string = err?.message ?? '';

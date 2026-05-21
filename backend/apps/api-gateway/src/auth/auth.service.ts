@@ -32,6 +32,7 @@ export class AuthService {
     return {
       message: 'OTP sent successfully',
       phone: normalizedPhone,
+      otp, // temporary — remove this line once an SMS provider is integrated
     };
   }
 
@@ -101,6 +102,7 @@ export class AuthService {
     return {
       message: 'Login OTP sent successfully',
       phone: normalizedPhone,
+      otp, // temporary — remove this line once an SMS provider is integrated
     };
   }
 

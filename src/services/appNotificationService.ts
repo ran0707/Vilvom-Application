@@ -180,6 +180,51 @@ export async function canShowPasswordAlert(): Promise<boolean> {
   }
 }
 
+// ─── OTP notification — high-priority heads-up ───────────────────────────────
+
+const OTP_CHANNEL_ID = 'vilvom-otp-channel';
+
+function ensureOtpChannel() {
+  if (!PushNotification?.createChannel) return;
+  try {
+    PushNotification.createChannel(
+      {
+        channelId: OTP_CHANNEL_ID,
+        channelName: 'Vilvom OTP',
+        channelDescription: 'One-time password delivery',
+        importance: 5, // IMPORTANCE_HIGH — shows as heads-up banner
+        vibrate: true,
+        playSound: true,
+        soundName: 'default',
+      },
+      () => {},
+    );
+  } catch (e) {}
+}
+
+export function sendOtpNotification(otp: string, phone: string): void {
+  if (!PushNotification) return;
+  try {
+    ensureOtpChannel();
+    // Format OTP with spaces so it's easy to read: "1 2 3 4 5 6"
+    const spaced = otp.split('').join(' ');
+    PushNotification.localNotification({
+      channelId: OTP_CHANNEL_ID,
+      title: 'Your Vilvom OTP',
+      message: `${spaced}   (valid for 5 minutes)`,
+      bigText: `Your one-time password for ${phone} is:\n\n${spaced}\n\nValid for 5 minutes. Do not share this code.`,
+      playSound: true,
+      soundName: 'default',
+      importance: 'high',
+      priority: 'high',
+      vibrate: true,
+      vibration: 300,
+      ongoing: false,
+      autoCancel: true,
+    });
+  } catch (e) {}
+}
+
 // ─── 5. Permission request — once per install ────────────────────────────────
 
 export async function requestPermissionOnce(): Promise<void> {

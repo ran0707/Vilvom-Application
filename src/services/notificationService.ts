@@ -39,6 +39,19 @@ const ensureConfigured = () => {
           console.log('[notificationService] channel created?', created);
         },
       );
+      // High-priority channel for OTP delivery
+      PushNotification.createChannel(
+        {
+          channelId: 'vilvom-otp-channel',
+          channelName: 'Vilvom OTP',
+          channelDescription: 'One-time password delivery',
+          importance: 5,
+          vibrate: true,
+          playSound: true,
+          soundName: 'default',
+        },
+        () => {},
+      );
     }
     return true;
   } catch (e) {

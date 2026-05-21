@@ -16,6 +16,7 @@ import { OtpInput } from 'react-native-otp-entry';
 import { useNavigation } from '@react-navigation/native';
 import { requestOtp, verifyOtp } from '../services/authApi';
 import { useAuth } from '../context/AuthContext';
+import { sendOtpNotification } from '../services/appNotificationService';
 
 const SignupScreen = () => {
   const navigation = useNavigation();
@@ -48,9 +49,10 @@ const SignupScreen = () => {
     }
     setLoading(true);
     try {
-      await requestOtp(phone.trim());
+      const res = await requestOtp(phone.trim());
       setOtpSent(true);
       startCountdown();
+      if (res?.otp) sendOtpNotification(res.otp, phone.trim());
       Alert.alert('Success', 'OTP sent to your phone number!');
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to send OTP. Please try again.');
