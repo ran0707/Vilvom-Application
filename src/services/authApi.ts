@@ -374,14 +374,16 @@ export const isAuthenticated = async (): Promise<boolean> => {
     const token = await getAuthToken();
     if (!token) return false;
     const payloadB64 = token.split('.')[1];
-    if (!payloadB64) return false;
-    const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
-    const json = Buffer.from(base64, 'base64').toString('utf8');
+    if (!payloadB64) return !!token;
+    const padding = '='.repeat((4 - (payloadB64.length % 4)) % 4);
+    const base64 = (payloadB64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(base64);
     const { exp } = JSON.parse(json);
-    return typeof exp === 'number' && Date.now() < (exp - 10) * 1000;
+    if (typeof exp !== 'number') return true; // no exp → treat as valid
+    return Date.now() < exp * 1000;
   } catch {
     const token = await getAuthToken();
-    return !!token;
+    return !!token; // decode failed → trust presence of token
   }
 };
 

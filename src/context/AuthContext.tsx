@@ -16,12 +16,14 @@ const isTokenExpired = (token: string): boolean => {
   try {
     const payloadB64 = token.split('.')[1];
     if (!payloadB64) return true;
-    const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
-    const json = Buffer.from(base64, 'base64').toString('utf8');
+    const padding = '='.repeat((4 - (payloadB64.length % 4)) % 4);
+    const base64 = (payloadB64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(base64);
     const { exp } = JSON.parse(json);
-    return typeof exp !== 'number' || Date.now() >= (exp - 10) * 1000;
+    if (typeof exp !== 'number') return false;
+    return Date.now() >= exp * 1000;
   } catch {
-    return true;
+    return false; // decode failed → assume valid
   }
 };
 

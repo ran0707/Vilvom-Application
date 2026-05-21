@@ -34,14 +34,15 @@ const isTokenExpired = (token: string): boolean => {
   try {
     const payloadB64 = token.split('.')[1];
     if (!payloadB64) return true;
-    // base64url → base64
-    const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
-    const json = Buffer.from(base64, 'base64').toString('utf8');
+    // base64url → base64 with proper padding
+    const padding = '='.repeat((4 - (payloadB64.length % 4)) % 4);
+    const base64 = (payloadB64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(base64); // atob is available globally in React Native 0.63+
     const { exp } = JSON.parse(json);
-    // exp is in seconds; give a 10-second grace window
-    return typeof exp !== 'number' || Date.now() >= (exp - 10) * 1000;
+    if (typeof exp !== 'number') return false; // no exp claim → treat as valid
+    return Date.now() >= exp * 1000;
   } catch {
-    return true; // malformed token → treat as expired
+    return false; // decode failed → assume valid, let backend reject if truly bad
   }
 };
 
