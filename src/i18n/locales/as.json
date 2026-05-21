@@ -12,21 +12,18 @@
     "success": "সফল",
     "unknown": "অজানা"
   },
-
   "nav": {
     "result": "ফলাফল",
     "get_started": "আৰম্ভ কৰক",
     "signup": "চাইন আপ",
     "main_tabs": "হোম"
   },
-
   "get_started": {
     "title": "চিহ্নিত কৰক, ৰক্ষা কৰক, উদ্ভিদৰ সুৰক্ষা কৰক",
     "subtitle": "AI-ভিত্তিক চিনাক্তকৰণে আপোনাৰ পিঠাৰ ৰোগ দ্রুত চিনাক্ত কৰে। আপোনাৰ উৎপাদন ৰক্ষা কৰক।",
     "cta": "Plant AI সৈতে আৰম্ভ কৰক",
     "guest_login": "অতিথি প্ৰবেশ"
   },
-
   "signup": {
     "title": "চাইন আপ",
     "placeholder": {
@@ -45,7 +42,6 @@
     },
     "account_created": "অকাউণ্ট সফলতাৰে সৃষ্টি হৈছে!"
   },
-
   "camera": {
     "permission_denied": "অনুমতি প্রত্যাখ্যান কৰা হৈছে",
     "camera_permission_required": "ফটো তোলাৰ বাবে কেমেৰা অনুমতি প্ৰয়োজন।",
@@ -57,7 +53,6 @@
     "camera_unavailable": "কেমেৰা উপলব্ধ নহয়",
     "camera_permission_denied": "কেমেৰা অনুমতি প্রত্যাখ্যান"
   },
-
   "pest_result": {
     "title": "ফলাফল",
     "no_result": "কোনো ফলাফল উপলব্ধ নহয়।",
@@ -74,7 +69,6 @@
     "detection_prefix": "চিহ্নিতঃ",
     "unknown": "অজানা"
   },
-
   "drone": {
     "title": "ড্ৰোন সেৱাৰ সৈতে সংযোগ কৰক",
     "card_title": "পেশাদাৰ ড্ৰোন সেৱাসমূহ",
@@ -85,9 +79,41 @@
       "message": "চুটি বাৰ্তা / প্ৰয়োজন"
     },
     "contact_provider": "প্ৰদানকাৰীৰ সৈতে যোগাযোগ কৰক",
-    "info_response_time": "24 ঘণ্টাৰ ভিতৰত উত্তৰ দিয়া হ'ব। মূল্য শ্ৰেণীৰ ওপৰত নিৰ্ভৰ কৰে।"
+    "info_response_time": "24 ঘণ্টাৰ ভিতৰত উত্তৰ দিয়া হ'ব। মূল্য শ্ৰেণীৰ ওপৰত নিৰ্ভৰ কৰে।",
+    "no_predictions": "এতিয়ালৈকে কোনো পূর্বাভাস নাই — ইয়াত ফলাফল দেখিবলৈ এটা গছ স্কেন কৰক",
+    "name": "আপোনাৰ নাম",
+    "phone": "ফোন নম্বৰ",
+    "message": "চুটি বাৰ্তা / প্ৰয়োজন",
+    "hero_title": "ড্ৰোন সেৱাসমূহ",
+    "hero_sub": "আপোনাৰ চাহ বাগিচাৰ বাবে প্ৰমাণিত ড্ৰোন অপাৰেটৰ বুক কৰক",
+    "choose_service": "এটা সেৱা বাছক",
+    "schedule_slot": "আপোনাৰ স্লট শ্বিডিউল কৰক",
+    "date_label": "তাৰিখ",
+    "location_ph": "খেতিৰ স্থান / ঠিকনা",
+    "area_ph": "একৰত এলেকা (ঐচ্ছিক)",
+    "notes_hide": "নোট লুকুৱাওক",
+    "notes_add": "বিশেষ নোট যোগ কৰক (ঐচ্ছিক)",
+    "notes_ph": "বিশেষ প্ৰয়োজনীয়তা বৰ্ণনা কৰক",
+    "book_now": "এতিয়াই বুক কৰক",
+    "info_certified": "সকলো অপাৰেটৰ প্ৰমাণিত। আমি 24 ঘণ্টাৰ ভিতৰত নিশ্চিত কৰোঁ।",
+    "before_11": "পুৱা 11 বজাৰ আগত",
+    "after_2": "দুপৰীয়া 2 বজাৰ পিছত",
+    "request_title": "ড্ৰোন সেৱাৰ অনুৰোধ",
+    "select_service": "এটা সেৱা বাছক...",
+    "select_time_slot": "টাইম স্লট বাছক...",
+    "tap_calendar": "কেলেণ্ডাৰ দৃশ্য খুলিবলৈ টেপ কৰক",
+    "submit_request": "অনুৰোধ দাখিল কৰক",
+    "select_urgency": "জৰুৰী স্তৰ বাছক",
+    "low_priority": "কম অগ্ৰাধিকাৰ",
+    "medium_priority": "মধ্যম অগ্ৰাধিকাৰ",
+    "high_priority": "উচ্চ অগ্ৰাধিকাৰ",
+    "urgent": "জৰুৰী",
+    "skip_rating": "ৰেটিং এৰক",
+    "rate_service_title": "ড্ৰোন সেৱা ৰেট কৰক",
+    "select_service_modal": "সেৱাৰ ধৰণ বাছক",
+    "select_time_modal": "টাইম স্লট বাছক",
+    "select_date_modal": "তাৰিখ বাছক"
   },
-
   "profile": {
     "load_error_title": "ত্ৰুটি",
     "load_error_message": "ব্যৱহাৰকাৰীৰ প্ৰোফাইল লোড কৰিবলৈ বিফল হৈছে",
@@ -106,9 +132,21 @@
     "order_tracking": "অর্ডাৰ ট্ৰেকিং",
     "notifications": "বিজ্ঞপ্তি",
     "help_support": "সহায় আৰু সমৰ্থন",
-    "field_overview": "ক্ষেত্ৰৰ অবলোকন"
+    "field_overview": "ক্ষেত্ৰৰ অবলোকন",
+    "app_permissions": "এপ্ অনুমতি",
+    "language": "ভাষা",
+    "app_language_label": "এপ্ ভাষা",
+    "services": "সেৱা",
+    "more": "অধিক",
+    "tea_farmer": "চাহ খেতিয়ক",
+    "become_seller": "বিক্ৰেতা হওক",
+    "feedback": "মতামত",
+    "grant": "অনুমতি দিয়ক"
   },
-
+  "language_screen": {
+    "title": "এপ্ ভাষা",
+    "subtitle": "আপোনাৰ পছন্দৰ ভাষা বাছক"
+  },
   "home": {
     "hello": "নমস্কাৰ!",
     "my_fields": "মোৰ চাহ খেতি",
@@ -135,6 +173,12 @@
       "add_spray_log": "স্প্রে লগ যোগ কৰক"
     },
     "no_predictions": "এখনলৈকে কোনো পৰিণাম নাই — এটা উদ্ভিদ স্কেন কৰি ইয়াত ফলাফল চাওক",
+    "using_coimbatore": "কোয়েম্বাটোৰ স্থান ব্যৱহাৰ কৰা হৈছে...",
+    "success_stories": "সাফল্যৰ কাহিনী",
+    "farmers_helped": "সহায় কৰা কৃষক",
+    "hectares_protected": "সুৰক্ষিত হেক্টৰ",
+    "avg_cost_savings": "গড় খৰচ সঞ্চয়",
+    "what_farmers_say": "কৃষকে কি কয়",
     "phrases": {
       "sunny": [
         "চাহ বঢ়োৱাৰ বাবে আজিৰ আবহোৱা উপযোগী",
@@ -173,7 +217,6 @@
       ]
     }
   },
-
   "market": {
     "title": "টি হাব",
     "subtitle": "প্লান্টেশন যোগান আৰু নিৰ্বাচিত চাহ",
@@ -188,13 +231,22 @@
       "green_tea": "গ্ৰীণ টি",
       "saplings": "ছটছছ",
       "gear": "গিয়াৰ",
-      "equipment": "উপকৰণ"
+      "equipment": "উপকৰণ",
+      "pesticides": "কীটনাশক",
+      "fertilizers": "সাৰ"
     }
   },
-
   "spray": {
     "title": "স্প্রে লগ",
-    "calendar_days": ["সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্ৰ", "শনি", "সোম"],
+    "calendar_days": [
+      "সোম",
+      "মঙ্গল",
+      "বুধ",
+      "বৃহস্পতি",
+      "শুক্ৰ",
+      "শনি",
+      "সোম"
+    ],
     "logs_for": "{{date}} ৰ বাবে লগসমূহ",
     "add_log": "+ লগ যোগ কৰক",
     "no_logs": "এই তাৰিখৰ বাবে কোনো লগ নাই",
@@ -213,9 +265,16 @@
       "notes": "নোট"
     },
     "save": "সংৰক্ষণ",
-    "add": "যোগ কৰক"
+    "add": "যোগ কৰক",
+    "page_sub": "চাহ বাগিচা স্প্রে ৰেকৰ্ড",
+    "sprayer_hand": "হাত",
+    "sprayer_machine": "মেচিন",
+    "sprayer_drone": "ড্ৰোন",
+    "no_logs_yet": "এতিয়ালৈকে কোনো লগ নাই",
+    "empty_hint": "আজিৰ স্প্রে কার্যকলাপ ৰেকৰ্ড কৰিবলৈ লগ যোগ কৰক",
+    "status_done": "সম্পন্ন",
+    "status_pending": "বাকী"
   },
-
   "weather": {
     "details_title": "আবহাওয়া বিবৰণ",
     "current_conditions": "বৰ্তমান অৱস্থা",
@@ -246,7 +305,6 @@
     "last_updated": "শেষ আপডেট",
     "tea_advice_prefix": "চাহ উপদেশ:"
   },
-
   "components": {
     "drone_banner": {
       "badge": "ড্ৰোন সেৱা",
@@ -268,7 +326,7 @@
     "step_recommend": "আমাৰ পৰামৰ্শ",
     "take_button": "ফটো লওক",
     "info_heading": "কীট প্ৰবেশ",
-    "info_sub": "দ্ৰুত কীট নিৰ্ণয়ৰ বাবে পাতবোৰ স্কেন কৰক আৰু সহজ পৰামৰ্শ বিচাৰি পাওক।",
+    "info_sub": "এখন ছবি তুলি লওক আৰু পৰামৰ্শটো লওক",
     "get_help": "সহায় লওক",
     "advisory_title": "পৰামৰ্শ সম্বন্ধীয় যোগাযোগ",
     "advisory_sub": "বিশেষজ্ঞৰ সহায় পাব",
@@ -277,6 +335,11 @@
     "auction_title": "নিলাম মূল্য",
     "auction_sub": "সাম্প্ৰতিক গড় নিলাম মূল্য আৰু চার্ট",
     "recent_heading": "শেহতীয়াত চিনাক্তকৰণ",
+    "card_badge": "AI সেৱা",
+    "scan_now": "এতিয়া স্কেন কৰক",
+    "learn_more": "অধিক জানক",
+    "feat_detection": "কীট চিনাক্তকৰণ",
+    "feat_ai": "AI পৰামৰ্শ",
     "severity": {
       "mild": "সুকোমল",
       "moderate": "মধ্যম",

@@ -162,9 +162,19 @@ const MarketTab = () => {
   const [nearbyOnly, setNearbyOnly] = useState<boolean>(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locating, setLocating] = useState<boolean>(false);
-  const categories = [
-    'All', 'Pesticides', 'Fertilizers', 'Equipment', 'Black Tea', 'Green Tea', 'Saplings'
-  ];
+  const CATEGORY_KEYS = ['All', 'Pesticides', 'Fertilizers', 'Equipment', 'Black Tea', 'Green Tea', 'Saplings'];
+  const getCategoryLabel = (key: string): string => {
+    const map: Record<string, string> = {
+      'All': t('market.categories.all'),
+      'Pesticides': t('market.categories.pesticides'),
+      'Fertilizers': t('market.categories.fertilizers'),
+      'Equipment': t('market.categories.equipment'),
+      'Black Tea': t('market.categories.black_tea'),
+      'Green Tea': t('market.categories.green_tea'),
+      'Saplings': t('market.categories.saplings'),
+    };
+    return map[key] || key;
+  };
 
   const filtered = PRODUCTS.filter(p => {
     const matchesQuery =
@@ -246,21 +256,21 @@ const MarketTab = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Tea Market</Text>
-        <Text style={styles.subtitle}>Find teas, equipment, and chemicals near you</Text>
+        <Text style={styles.title}>{t('market.title')}</Text>
+        <Text style={styles.subtitle}>{t('market.subtitle')}</Text>
       </View>
       <View style={styles.headerActions}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 12 }}>
-          {categories.map(c => (
+          {CATEGORY_KEYS.map(c => (
             <TouchableOpacity
               key={c}
               style={[styles.catPill, category === c && styles.catPillActive]}
               onPress={() => setCategory(c)}
             >
               <Text style={[styles.catText, category === c && styles.catTextActive]}>
-                {c}
+                {getCategoryLabel(c)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -268,7 +278,7 @@ const MarketTab = () => {
       </View>
       <View style={styles.searchRow}>
         <TextInput
-          placeholder="Search product, type or tag"
+          placeholder={t('market.search_placeholder')}
           value={query}
           onChangeText={setQuery}
           style={[styles.search, { flex: 1 }]}
@@ -326,7 +336,7 @@ const MarketTab = () => {
         {selected && (
           <ScrollView style={styles.detailContainer}>
             <TouchableOpacity onPress={() => setSelected(null)} style={{ marginBottom: 12 }}>
-              <Text style={{ color: '#4CAF50', fontWeight: '700', fontSize:16 }}>← Back</Text>
+              <Text style={{ color: '#4CAF50', fontWeight: '700', fontSize:16 }}>← {t('market.back')}</Text>
             </TouchableOpacity>
             <Image
               source={{ uri: (selected as Product).image }}

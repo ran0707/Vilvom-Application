@@ -8,6 +8,7 @@ import { PestModule } from './pest/pest.module';
 import { DroneModule } from './drone/drone.module';
 import { SprayLogModule } from './spray-log/spray-log.module';
 import { AdminModule } from './admin/admin.module';
+import { FeedbackModule } from './feedback/feedback.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -29,6 +30,7 @@ import { HealthController } from './health/health.controller';
     DroneModule,
     SprayLogModule,
     AdminModule,
+    FeedbackModule,
   ],
   controllers: [HealthController],
 })

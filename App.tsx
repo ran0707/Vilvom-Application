@@ -7,26 +7,56 @@
 
 import {
   StatusBar,
-  StyleSheet,
   useColorScheme,
-  Platform,
-  PermissionsAndroid,
-  Alert,
-  Linking,
-  View,
-  Text,
-  ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { initI18n } from './src/i18n';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import AppFeedbackModal from './src/components/AppFeedbackModal';
+import { shouldShowFeedbackPopup } from './src/services/feedbackApi';
 
-// PermissionManager: do not request permissions on app start/splash.
-// Permissions will be requested from `HomeTab` when the user reaches the home screen.
-const PermissionManager = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
+// Inner shell that has access to AuthContext for the feedback modal
+const AppShell = () => {
+  const { user } = useAuth();
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
+
+  const tryShowFeedback = useCallback(async (): Promise<boolean> => {
+    const show = await shouldShowFeedbackPopup();
+    if (show) {
+      setFeedbackVisible(true);
+      return true; // intercept back press — let user decide in modal
+    }
+    return false; // allow normal back/exit
+  }, []);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Only intercept at the root level — navigation handles inner screens first.
+      // If the feedback modal is already visible, let it handle its own close.
+      if (feedbackVisible) return true;
+      // tryShowFeedback is async; we trigger it but return false so the event
+      // bubbles normally (navigation pop etc). If we do show the modal the
+      // next back press will hit the modal's onRequestClose instead.
+      tryShowFeedback();
+      return false;
+    });
+    return () => sub.remove();
+  }, [feedbackVisible, tryShowFeedback]);
+
+  return (
+    <>
+      <AppNavigator />
+      <AppFeedbackModal
+        visible={feedbackVisible}
+        userName={user?.name ?? user?.profileInfo?.fullName ?? ''}
+        userLocation={user?.profileInfo?.address ?? ''}
+        onDone={() => setFeedbackVisible(false)}
+      />
+    </>
+  );
 };
 
 function App() {
@@ -55,25 +85,10 @@ function App() {
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <AuthProvider>
-        <PermissionManager>
-          <AppNavigator />
-        </PermissionManager>
+        <AppShell />
       </AuthProvider>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#333',
-  },
-});
 
 export default App;

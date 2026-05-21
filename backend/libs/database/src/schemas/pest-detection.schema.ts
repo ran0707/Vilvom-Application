@@ -45,16 +45,13 @@ export class PestDetection {
   @Prop()
   severity: string;
 
-  @Prop({
-    type: {
-      lat: Number,
-      lng: Number,
-    },
-  })
+  // Use Object type to avoid Mongoose misinterpreting the nested 'type' key in GeoJSON.
+  // The 2dsphere index below handles geo queries; documents must contain valid GeoJSON Point.
+  @Prop({ type: Object })
   location: {
-    lat: number;
-    lng: number;
-  };
+    type: string;
+    coordinates: number[];
+  } | null;
 
   @Prop()
   processed_image: string;
@@ -99,3 +96,5 @@ export class PestDetection {
 }
 
 export const PestDetectionSchema = SchemaFactory.createForClass(PestDetection);
+// 2dsphere index enables $near queries; sparse so records without location are skipped
+PestDetectionSchema.index({ location: '2dsphere' }, { sparse: true });

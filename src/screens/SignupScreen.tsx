@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import LeafButton from '../components/LeafButton';
 import { OtpInput } from 'react-native-otp-entry';
 import { useNavigation } from '@react-navigation/native';
 import { requestOtp, verifyOtp } from '../services/authApi';
@@ -155,18 +155,12 @@ const SignupScreen = () => {
               selectionColor="#4CAF50"
             />
 
-            <TouchableOpacity
-              testID="send-otp-btn"
-              style={styles.circleButton}
+            <LeafButton
+              label="Send OTP"
               onPress={handleRequestOtp}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <MaterialIcons name="send" size={28} color="#fff" />
-              )}
-            </TouchableOpacity>
+              loading={loading}
+              disabled={!name.trim() || phone.length < 10}
+            />
           </>
         ) : (
           <>
@@ -190,18 +184,12 @@ const SignupScreen = () => {
               }}
             />
 
-            <TouchableOpacity
-              testID="verify-otp-btn"
-              style={styles.circleButton}
+            <LeafButton
+              label="Verify & Create Account"
               onPress={handleVerifyOtp}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <MaterialIcons name="check" size={28} color="#fff" />
-              )}
-            </TouchableOpacity>
+              loading={loading}
+              disabled={otp.length !== 6}
+            />
 
             <TouchableOpacity
               style={styles.resendButton}
@@ -295,21 +283,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eee',
     color: '#333',
-  },
-  circleButton: {
-    backgroundColor: '#4CAF50',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 5,
-    elevation: 4,
   },
   otpContainer: { marginBottom: 20, marginTop: 10 },
   otpInputContainer: {

@@ -9,6 +9,9 @@ import { Model } from 'mongoose';
 import { PestDetection, PestDetectionDocument } from '@app/database';
 import { CreatePestDetectionDto } from '@app/common';
 import axios from 'axios';
+import * as sharp from 'sharp';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class PestService {
@@ -102,6 +105,12 @@ export class PestService {
         processed_image: detectionResult.processed_image,
       };
 
+      // Compress and persist the processed image to disk instead of storing base64 in MongoDB
+      const processedImagePath = await this.saveProcessedImage(
+        mappedResult.processed_image,
+        file.filename,
+      );
+
       // Create detection record
       const detection = new this.pestDetectionModel({
         userId: userId || null,
@@ -114,11 +123,18 @@ export class PestService {
         chemical_control: mappedResult.chemical_control,
         mechanical_control: mappedResult.mechanical_control,
         severity: mappedResult.severity,
-        location: createPestDetectionDto.location,
-        processed_image: mappedResult.processed_image,
+        // Only set location when valid GeoJSON coordinates are provided
+        ...(createPestDetectionDto.location?.coordinates?.length === 2
+          ? { location: { type: 'Point', coordinates: createPestDetectionDto.location.coordinates } }
+          : {}),
+        processed_image: processedImagePath,
         original_image: `uploads/${file.filename}`, // In production, save to cloud storage
         meta: createPestDetectionDto.meta || {},
-        questionnaire: createPestDetectionDto.questionnaire || [],
+        questionnaire: (createPestDetectionDto.questionnaire || []).map(q => ({
+          question: q.question,
+          answer: q.answer,
+          timestamp: new Date(),
+        })),
         chat: createPestDetectionDto.chat || [],
         status: 'completed',
         detectedAt: new Date(),
@@ -134,6 +150,26 @@ export class PestService {
     } catch (error) {
       this.logger.error('Pest detection failed', error.stack);
       throw error;
+    }
+  }
+
+  private async saveProcessedImage(base64Data: string, originalFilename: string): Promise<string | null> {
+    if (!base64Data) return null;
+    try {
+      const base64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64, 'base64');
+      const outputDir = path.resolve('./uploads/pest-images');
+      if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+      const outputFilename = `processed_${originalFilename.replace(/\.[^.]+$/, '')}.jpg`;
+      const outputPath = path.join(outputDir, outputFilename);
+      await sharp(buffer)
+        .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 65 })
+        .toFile(outputPath);
+      return `uploads/pest-images/${outputFilename}`;
+    } catch (e) {
+      this.logger.warn('Processed image compression failed, skipping save:', e.message);
+      return null;
     }
   }
 
@@ -243,6 +279,48 @@ export class PestService {
       center: { lat, lng },
       radius,
     };
+  }
+
+  async updateDetection(detectionId: string, userId: string | undefined, body: any) {
+    const update: Record<string, any> = {};
+
+    if (body.location?.coordinates?.length === 2) {
+      update.location = {
+        type: 'Point',
+        coordinates: body.location.coordinates, // [lng, lat]
+      };
+    }
+
+    if (Array.isArray(body.questionnaire)) {
+      update.questionnaire = body.questionnaire.map((q: any) => ({
+        question: q.question,
+        answer: q.answer,
+        timestamp: new Date(),
+      }));
+    }
+
+    if (Array.isArray(body.chat)) {
+      update.chat = body.chat;
+    }
+
+    if (body.recommendationLevel) {
+      if (!update.meta) update.meta = {};
+      update['meta.recommendationLevel'] = body.recommendationLevel;
+    }
+
+    if (body.sectionName) {
+      if (!update.meta) update.meta = {};
+      update['meta.sectionName'] = body.sectionName;
+    }
+
+    // Find by _id only — works for both authenticated and guest detections
+    const detection = await this.pestDetectionModel.findByIdAndUpdate(
+      detectionId,
+      { $set: update },
+      { new: true },
+    );
+
+    return { detection: detection?.toJSON() };
   }
 
   async getUserStatistics(userId: string) {

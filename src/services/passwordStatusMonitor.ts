@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { getPasswordStatus } from './authApi';
+import { canShowPasswordAlert } from './appNotificationService';
 
 export interface PasswordStatusMonitor {
   checkPasswordStatus: () => Promise<void>;
@@ -32,10 +33,10 @@ class PasswordStatusMonitorService implements PasswordStatusMonitor {
       const status = await getPasswordStatus();
 
       if (status.passwordChangeRequired) {
-        this.showPasswordChangeRequired(status.daysSinceLastChange);
+        await this.showPasswordChangeRequired(status.daysSinceLastChange);
       } else if (status.daysSinceLastChange >= 25) {
         // Warn user 5 days before requirement
-        this.showPasswordChangeWarning(30 - status.daysSinceLastChange);
+        await this.showPasswordChangeWarning(30 - status.daysSinceLastChange);
       }
     } catch (error) {
       console.error('Password status check failed:', error);
@@ -81,7 +82,8 @@ class PasswordStatusMonitorService implements PasswordStatusMonitor {
   /**
    * Show alert when password change is required
    */
-  private showPasswordChangeRequired(daysSinceLastChange: number): void {
+  private async showPasswordChangeRequired(daysSinceLastChange: number): Promise<void> {
+    if (!(await canShowPasswordAlert())) return;
     Alert.alert(
       'Password Change Required',
       `Your password is ${daysSinceLastChange} days old. For security reasons, you must change your password now.`,
@@ -98,7 +100,8 @@ class PasswordStatusMonitorService implements PasswordStatusMonitor {
   /**
    * Show warning when password change is approaching
    */
-  private showPasswordChangeWarning(daysUntilRequired: number): void {
+  private async showPasswordChangeWarning(daysUntilRequired: number): Promise<void> {
+    if (!(await canShowPasswordAlert())) return;
     Alert.alert(
       'Password Change Reminder',
       `Your password expires in ${daysUntilRequired} days. Consider changing it soon for continued security.`,

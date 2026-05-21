@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -17,11 +18,12 @@ type Props = {
 };
 
 const PestInfestationCard: React.FC<Props> = ({ onScan, onLearnMore }) => {
+  const { t } = useTranslation();
   return (
     <View style={styles.bannerContainer}>
       {/* Product Badge */}
       <View style={styles.productBadge}>
-        <Text style={styles.productText}>AI Service</Text>
+        <Text style={styles.productText}>{t('pest_infestation.card_badge')}</Text>
       </View>
 
       {/* Main Content Area */}
@@ -33,35 +35,35 @@ const PestInfestationCard: React.FC<Props> = ({ onScan, onLearnMore }) => {
             numberOfLines={1}
             ellipsizeMode={'tail'}
           >
-            Pest Infestation Scan
+            {t('pest_infestation.info_heading')}
           </Text>
           <Text
             style={styles.description}
             numberOfLines={2}
             ellipsizeMode={'tail'}
           >
-            Scan tea leaves for early pest signs with instant AI insights.
+            {t('pest_infestation.info_sub')}
           </Text>
 
           {/* Quick Features */}
           <View style={styles.featuresContainer}>
             <View style={styles.featureItem}>
               <Icon name="bug" size={12} color="#fff" />
-              <Text style={styles.featureText}>Pest Detection</Text>
+              <Text style={styles.featureText}>{t('pest_infestation.feat_detection')}</Text>
             </View>
             <View style={styles.featureItem}>
               <Icon name="leaf" size={12} color="#fff" />
-              <Text style={styles.featureText}>AI Recommendations</Text>
+              <Text style={styles.featureText}>{t('pest_infestation.feat_ai')}</Text>
             </View>
           </View>
 
           {/* Action Buttons */}
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.scanButton} onPress={onScan}>
-              <Text style={styles.scanText}>Scan Now</Text>
+              <Text style={styles.scanText}>{t('pest_infestation.scan_now')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.learnButton} onPress={onLearnMore}>
-              <Text style={styles.learnText}>Learn More</Text>
+              <Text style={styles.learnText}>{t('pest_infestation.learn_more')}</Text>
             </TouchableOpacity>
           </View>
         </View>

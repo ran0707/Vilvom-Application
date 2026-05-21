@@ -29,6 +29,7 @@ try {
   Calendar = null;
 }
 
+import { useTranslation } from 'react-i18next';
 import { getItem } from '../utils/storage';
 import { API_BASE_URL } from '../config/api';
 
@@ -73,6 +74,7 @@ const SAMPLE_SLOTS: TimeSlot[] = [
 const DroneContactScreen = ({ navigation }: { navigation: any }) => {
   const colorScheme = useColorScheme();
   const t = getTheme(colorScheme ?? 'light');
+  const { t: tr } = useTranslation();
 
   // State setup
   const [serviceType, setServiceType] = useState('');
@@ -307,7 +309,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
           >
             <Icon name="arrow-left" size={18} color={t.iconColor} />
           </TouchableOpacity>
-          <Text style={t.title}>Drone Service Request</Text>
+          <Text style={t.title}>{tr('drone.request_title')}</Text>
         </View>
         <View style={t.card}>
           <Image
@@ -317,10 +319,8 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
             style={t.image}
             resizeMode="contain"
           />
-          <Text style={t.cardTitle}>Professional Drone Services</Text>
-          <Text style={t.cardSubtitle}>
-            Precision spraying, mapping, and monitoring for tea plantations.
-          </Text>
+          <Text style={t.cardTitle}>{tr('drone.card_title')}</Text>
+          <Text style={t.cardSubtitle}>{tr('drone.card_subtitle')}</Text>
           <View style={t.formGroup}>
             <Text style={t.label}>Service Type *</Text>
             <TouchableOpacity
@@ -330,7 +330,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
               <Text style={t.pickerText}>
                 {serviceType
                   ? (services.find(s => s.id === serviceType)?.name || '')
-                  : 'Select a service...'}
+                  : tr('drone.select_service')}
               </Text>
               <Icon name="chevron-down" size={14} color={t.iconColor} />
             </TouchableOpacity>
@@ -378,9 +378,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
               </Text>
               <Icon name="chevron-down" size={14} color={t.iconColor} />
             </TouchableOpacity>
-            <Text style={t.modalItemSubtext}>
-              Tap to open calendar view
-            </Text>
+            <Text style={t.modalItemSubtext}>{tr('drone.tap_calendar')}</Text>
           </View>
           <View style={t.formGroup}>
             <Text style={t.label}>Preferred Time *</Text>
@@ -390,8 +388,8 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
             >
               <Text style={t.pickerText}>
                 {preferredTime
-                  ? timeSlots.find(s => s.id === preferredTime)?.label
-                  : 'Select time slot...'}
+                  ? tr(`drone.${preferredTime}`)
+                  : tr('drone.select_time_slot')}
               </Text>
               <Icon name="chevron-down" size={14} color={t.iconColor} />
             </TouchableOpacity>
@@ -450,12 +448,12 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
               >
                 <Text style={t.pickerText}>
                   {urgency === 'low'
-                    ? 'Low Priority'
+                    ? tr('drone.low_priority')
                     : urgency === 'medium'
-                    ? 'Medium Priority'
+                    ? tr('drone.medium_priority')
                     : urgency === 'high'
-                    ? 'High Priority'
-                    : 'Urgent'}
+                    ? tr('drone.high_priority')
+                    : tr('drone.urgent')}
                 </Text>
                 <Icon name="chevron-down" size={14} color={t.iconColor} />
               </TouchableOpacity>
@@ -523,7 +521,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <Text style={t.submitText}>Submit Request</Text>
+                <Text style={t.submitText}>{tr('drone.submit_request')}</Text>
                 <Icon
                   name="paper-plane"
                   size={14}
@@ -535,16 +533,14 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
           </TouchableOpacity>
           <View style={t.infoRow}>
             <Icon name="info-circle" size={16} color={colorScheme === 'dark' ? '#aaa' : '#777'} />
-            <Text style={t.infoText}>
-              We will respond within 24 hours with availability and pricing details. All services are performed by certified drone operators.
-            </Text>
+            <Text style={t.infoText}>{tr('drone.info_response_time')}</Text>
           </View>
         </View>
         {/* MODALS */}
         <Modal visible={showServicePicker} transparent animationType="slide">
           <View style={t.modalOverlay}>
             <View style={t.modalContainer}>
-              <Text style={t.modalTitle}>Select Service Type</Text>
+              <Text style={t.modalTitle}>{tr('drone.select_service_modal')}</Text>
               <FlatList
                 data={services.length ? services : SAMPLE_SERVICES}
                 keyExtractor={item => item.id}
@@ -567,7 +563,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
                 style={t.modalCloseButton}
                 onPress={() => setShowServicePicker(false)}
               >
-                <Text style={t.modalCloseText}>Cancel</Text>
+                <Text style={t.modalCloseText}>{tr('common.cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -575,7 +571,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
         <Modal visible={showTimePicker} transparent animationType="slide">
           <View style={t.modalOverlay}>
             <View style={t.modalContainer}>
-              <Text style={t.modalTitle}>Select Time Slot</Text>
+              <Text style={t.modalTitle}>{tr('drone.select_time_modal')}</Text>
               <FlatList
                 data={timeSlots.length ? timeSlots : SAMPLE_SLOTS}
                 keyExtractor={item => item.id}
@@ -588,7 +584,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
                     }}
                   >
                     <Text style={t.modalItemText}>
-                      {item.label}
+                      {tr(`drone.${item.id}`)}
                       {item.recommended ? ' (Recommended)' : ''}
                     </Text>
                   </TouchableOpacity>
@@ -598,7 +594,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
                 style={t.modalCloseButton}
                 onPress={() => setShowTimePicker(false)}
               >
-                <Text style={t.modalCloseText}>Cancel</Text>
+                <Text style={t.modalCloseText}>{tr('common.cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -606,12 +602,12 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
         <Modal visible={showUrgencyPicker} transparent animationType="slide">
           <View style={t.modalOverlay}>
             <View style={t.modalContainer}>
-              <Text style={t.modalTitle}>Select Urgency Level</Text>
+              <Text style={t.modalTitle}>{tr('drone.select_urgency')}</Text>
               {[
-                { value: 'low', label: 'Low Priority' },
-                { value: 'medium', label: 'Medium Priority' },
-                { value: 'high', label: 'High Priority' },
-                { value: 'urgent', label: 'Urgent' },
+                { value: 'low', key: 'low_priority' },
+                { value: 'medium', key: 'medium_priority' },
+                { value: 'high', key: 'high_priority' },
+                { value: 'urgent', key: 'urgent' },
               ].map(item => (
                 <TouchableOpacity
                   key={item.value}
@@ -621,14 +617,14 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
                     setShowUrgencyPicker(false);
                   }}
                 >
-                  <Text style={t.modalItemText}>{item.label}</Text>
+                  <Text style={t.modalItemText}>{tr(`drone.${item.key}`)}</Text>
                 </TouchableOpacity>
               ))}
               <TouchableOpacity
                 style={t.modalCloseButton}
                 onPress={() => setShowUrgencyPicker(false)}
               >
-                <Text style={t.modalCloseText}>Cancel</Text>
+                <Text style={t.modalCloseText}>{tr('common.cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -636,7 +632,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
         <Modal visible={showCalendar} transparent animationType="slide">
           <View style={t.modalOverlay}>
             <View style={t.calendarModalContainer}>
-              <Text style={t.modalTitle}>Select Date</Text>
+              <Text style={t.modalTitle}>{tr('drone.select_date_modal')}</Text>
               {Calendar ? (
                 <Calendar
                     onDayPress={(day: any) => {
@@ -707,7 +703,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
                 style={t.modalCloseButton}
                 onPress={() => setShowCalendar(false)}
               >
-                <Text style={t.modalCloseText}>Cancel</Text>
+                <Text style={t.modalCloseText}>{tr('common.cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -721,7 +717,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
           <View style={t.modalOverlay}>
             <View style={t.ratingModalContainer}>
               <View style={t.ratingModalHeader}>
-                <Text style={t.modalTitle}>Rate Drone Service</Text>
+                <Text style={t.modalTitle}>{tr('drone.rate_service_title')}</Text>
                 <TouchableOpacity
                   onPress={() => setShowRatingModal(false)}
                   style={t.closeButton}
@@ -751,7 +747,7 @@ const DroneContactScreen = ({ navigation }: { navigation: any }) => {
                   navigation.goBack();
                 }}
               >
-                <Text style={t.skipRatingText}>Skip Rating</Text>
+                <Text style={t.skipRatingText}>{tr('drone.skip_rating')}</Text>
               </TouchableOpacity>
             </View>
           </View>

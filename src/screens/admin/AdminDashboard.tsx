@@ -8,11 +8,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart } from 'react-native-chart-kit';
+import { useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from '../../config/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -59,10 +61,25 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const navigation = useNavigation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.multiRemove(['authToken', 'userData']);
+          (navigation as any).replace('Login');
+        },
+      },
+    ]);
+  };
 
   const load = useCallback(async (isRefresh = false) => {
     try {
@@ -120,10 +137,10 @@ export default function AdminDashboard() {
           <Text style={styles.headerTitle}>Admin Dashboard</Text>
           <Text style={styles.headerSub}>Vilvom Platform Overview</Text>
         </View>
-        <View style={styles.adminBadge}>
-          <MaterialCommunityIcons name="shield-crown-outline" size={18} color="#2E7D32" />
-          <Text style={styles.adminBadgeText}>Admin</Text>
-        </View>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <MaterialCommunityIcons name="logout" size={16} color="#C62828" />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -243,8 +260,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 20, fontWeight: '700', color: '#1B5E20' },
   headerSub:   { fontSize: 12, color: '#757575', marginTop: 2 },
-  adminBadge:  { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, gap: 4 },
-  adminBadgeText: { color: '#2E7D32', fontSize: 12, fontWeight: '600' },
+  logoutBtn:   { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF0F0', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, gap: 5, borderWidth: 1, borderColor: '#FFCDD2' },
+  logoutText:  { color: '#C62828', fontSize: 13, fontWeight: '600' },
 
   scroll:      { padding: 16, paddingBottom: 32 },
   sectionTitle:{ fontSize: 14, fontWeight: '700', color: '#333', marginBottom: 10, marginTop: 4 },

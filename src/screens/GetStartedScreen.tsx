@@ -3,24 +3,26 @@ import {
   View,
   Text,
   StyleSheet,
-  ImageBackground,
   StatusBar,
   Animated,
   LayoutChangeEvent,
   Dimensions,
-  TouchableOpacity,
   Image,
+  TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Video from 'react-native-video';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 
 interface Props {
   onGetStarted: () => void;
+  onSignup: () => void;
 }
 
 const { width, height } = Dimensions.get('window');
 
-const GetStartedScreen: React.FC<Props> = ({ onGetStarted }) => {
+const GetStartedScreen: React.FC<Props> = ({ onGetStarted, onSignup }) => {
+  const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(0)).current;
   const [maxSlide, setMaxSlide] = useState(220);
 
@@ -149,8 +151,8 @@ const GetStartedScreen: React.FC<Props> = ({ onGetStarted }) => {
         <View style={styles.overlay} />
       </View>
 
-      {/* Logo top left */}
-      <View style={styles.logoContainer}>
+      {/* Logo top left — offset by status bar height */}
+      <View style={[styles.logoContainer, { top: insets.top }]}>
         <Image
           source={require('../../assets/vilvom_logo.png')}
           style={styles.logo}
@@ -160,7 +162,8 @@ const GetStartedScreen: React.FC<Props> = ({ onGetStarted }) => {
 
       {/* Content overlays */}
       <View style={styles.contentContainer}>
-        <View style={styles.textSection}>
+        {/* paddingBottom ensures swipe button clears gesture bar / nav buttons */}
+        <View style={[styles.textSection, { paddingBottom: Math.max(insets.bottom + 24, 40) }]}>
           <Text style={styles.title}>
             <Text style={styles.highlight}>Guardians {'\n'}</Text>
             of the Leaf
@@ -198,12 +201,22 @@ const GetStartedScreen: React.FC<Props> = ({ onGetStarted }) => {
                   },
                 ]}
               >
-                Get Started
+                Login
               </Animated.Text>
             </View>
           </View>
 
-          {/* Stats */}
+          {/* New user link */}
+          <TouchableOpacity
+            style={styles.signupLink}
+            onPress={onSignup}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.signupLinkText}>
+              New here?{' '}
+              <Text style={styles.signupLinkBold}>Create an account</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -229,7 +242,6 @@ const styles = StyleSheet.create({
   },
   textSection: {
     paddingHorizontal: 30,
-    marginBottom: 40,
   },
   title: {
     fontSize: 38,
@@ -349,9 +361,8 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     position: 'absolute',
-    top: 5,
     left: 0,
-    zIndex:1,
+    zIndex: 1,
   },
   logo: {
     width: 200,
@@ -362,6 +373,18 @@ const styles = StyleSheet.create({
     width,
     height,
     backgroundColor: '#ffffff',
+  },
+  signupLink: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  signupLinkText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+  },
+  signupLinkBold: {
+    color: '#fff',
+    fontWeight: '700',
   },
 });
 

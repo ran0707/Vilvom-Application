@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,615 +11,390 @@ import {
   Platform,
   PermissionsAndroid,
   Linking,
+  ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import LogoHeader from '../components/LogoHeader';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Geolocation from '@react-native-community/geolocation';
 
 // Dynamic imports for optional dependencies
 let launchCamera: any = null;
 let launchImageLibrary: any = null;
-let request: any = null;
-let PERMISSIONS: any = null;
-let RESULTS: any = null;
 
 try {
   const imagePicker = require('react-native-image-picker');
   launchCamera = imagePicker.launchCamera;
   launchImageLibrary = imagePicker.launchImageLibrary;
-} catch (error) {
+} catch {
   console.warn('react-native-image-picker not available');
-}
-
-try {
-  const permissions = require('react-native-permissions');
-  request = permissions.request;
-  PERMISSIONS = permissions.PERMISSIONS;
-  RESULTS = permissions.RESULTS;
-  console.log('react-native-permissions loaded successfully');
-} catch (error) {
-  console.warn('react-native-permissions not available:', error);
 }
 
 import { detectPest } from '../services/pestDetectionApi';
 
 const { width, height } = Dimensions.get('window');
+const FRAME_SIZE = width * 0.62;
 
-interface PestDetectionResult {
-  prediction: string;
-  confidence: number;
-  bounding_box: number[];
-  symptoms: string[];
-  biological_control: string[];
-  chemical_control: string[];
-  mechanical_control: string[];
-  processed_image: string;
-}
+const TIPS = [
+  { icon: 'white-balance-sunny',  text: 'Good lighting — avoid shadows on the leaf' },
+  { icon: 'image-filter-center-focus', text: 'Fill the frame with the affected area' },
+  { icon: 'leaf',                 text: 'Include both healthy and damaged parts' },
+];
 
 const CameraScreen = () => {
   const navigation = useNavigation();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const isFocused = useIsFocused();
 
-  // Helper: when an image is returned from camera or gallery, immediately analyze
   const handleImageSelected = async (imageUri: string) => {
     setAnalyzing(true);
     try {
-      console.log('[CameraScreen] handleImageSelected imageUri:', imageUri);
-      // Optionally show a quick loader on this screen
-      // Directly call detection API and navigate to result screen
-      console.log('[CameraScreen] calling detectPest...');
-      const result = await detectPest(imageUri);
-      // try to get device location (best-effort). Use navigator.geolocation if available.
-      try {
-        const rnNavigator: any = (globalThis as any).navigator || {};
-        const getPosition = () =>
-          new Promise<any>((resolve, reject) => {
-            const timeout = setTimeout(
-              () => reject(new Error('timeout')),
-              5000,
-            );
-            if (
-              rnNavigator.geolocation &&
-              rnNavigator.geolocation.getCurrentPosition
-            ) {
-              rnNavigator.geolocation.getCurrentPosition(
-                (pos: any) => {
-                  clearTimeout(timeout);
-                  resolve(pos);
-                },
-                (err: any) => {
-                  clearTimeout(timeout);
-                  reject(err);
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 },
-              );
-            } else {
-              clearTimeout(timeout);
-              reject(new Error('geolocation not available'));
-            }
-          });
-
-        const pos = await getPosition();
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        // attach to result for later saving and showing nearby info
-        (result as any).meta = { ...(result as any).meta, lat, lng };
-        (result as any).lat = lat;
-        (result as any).lng = lng;
-      } catch (locErr) {
-        // ignore location failures - proceed without coordinates
-        console.warn('Location fetch failed', locErr);
-      }
-      console.log(
-        '[CameraScreen] detectPest result:',
-        result && {
-          prediction: result.prediction,
-          keys: Object.keys(result || {}),
-        },
-      );
-      (navigation as any).navigate('PestQuestionnaire', { result });
-    } catch (error: any) {
-      console.error('[CameraScreen] Image analysis error:', {
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack,
-        fullError: error,
+      // Get location first using network accuracy (fast, works indoors/emulator)
+      let coords: { lat: number; lng: number } | undefined;
+      await new Promise<void>(resolve => {
+        Geolocation.getCurrentPosition(
+          pos => {
+            coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            resolve();
+          },
+          () => resolve(), // location optional — continue without it
+          { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 },
+        );
       });
 
-      let errorMessage = 'Failed to analyze image. Please try again.';
-      let errorTitle = 'Analysis Error';
-
-      if (error?.message) {
-        // Check for specific error types
-        if (
-          error.message.includes('401') ||
-          error.message.includes('unauthorized') ||
-          error.message.includes('invalid token')
-        ) {
-          errorTitle = 'Authentication Error';
-          errorMessage =
-            'Authentication error. Please login again to analyze images.';
-        } else if (
-          error.message.includes('network') ||
-          error.message.includes('unreachable') ||
-          error.message.includes('Cannot reach backend')
-        ) {
-          errorTitle = 'Network Error';
-          errorMessage =
-            'Cannot reach the server. Please check your internet connection and ensure the backend is running.';
-        } else if (error.message.includes('timeout')) {
-          errorTitle = 'Timeout Error';
-          errorMessage =
-            'Request timed out. Please try again with a better internet connection.';
-        } else if (error.message.includes('400')) {
-          errorTitle = 'Invalid Request';
-          errorMessage =
-            'Invalid image data. Please try taking a new photo or selecting a different image.';
-        } else if (error.message.includes('500') || error.message.includes('503')) {
-          errorTitle = 'Server Error';
-          errorMessage =
-            'Server error occurred. Please ensure both backend (port 5000) and AI service (port 8000) are running.';
-        } else {
-          // Show the actual error message for debugging
-          errorMessage = error.message || 'Failed to analyze image. Please try again.';
-        }
+      const result = await detectPest(imageUri, coords);
+      // Attach coords to result so PestResultScreen can also use them
+      if (coords) {
+        (result as any).lat = coords.lat;
+        (result as any).lng = coords.lng;
       }
-
-      Alert.alert(errorTitle, errorMessage);
+      (navigation as any).navigate('PestQuestionnaire', { result });
+    } catch (error: any) {
+      let title   = 'Analysis Error';
+      let message = error?.message || 'Failed to analyze image. Please try again.';
+      if (error?.message?.includes('401') || error?.message?.includes('unauthorized')) {
+        title   = 'Authentication Error';
+        message = 'Please login again to analyze images.';
+      } else if (error?.message?.includes('network') || error?.message?.includes('Cannot reach')) {
+        title   = 'Network Error';
+        message = 'Cannot reach the server. Check your connection and ensure the backend is running.';
+      } else if (error?.message?.includes('timeout')) {
+        title   = 'Timeout';
+        message = 'Request timed out. Try again with a better connection.';
+      } else if (error?.message?.includes('500') || error?.message?.includes('503')) {
+        title   = 'Server Error';
+        message = 'Server error. Ensure both backend (port 5000) and AI service (port 8000) are running.';
+      }
+      Alert.alert(title, message);
     } finally {
       setAnalyzing(false);
-      // Clear any stored selected image to avoid preview (we don't show preview)
-      setSelectedImage(null);
     }
   };
 
   const requestCameraPermission = async () => {
-    console.log('Requesting camera permission...');
-
     if (Platform.OS === 'android') {
       try {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.CAMERA,
           {
             title: 'Camera Permission',
-            message:
-              'Camera access is needed to take photos for pest detection.',
+            message: 'Camera access is needed to take photos for pest detection.',
             buttonPositive: 'Allow',
             buttonNegative: 'Deny',
           },
         );
-
-        console.log('Permission result:', granted);
-
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Camera permission granted');
           openCamera();
         } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-          console.log('Camera permission permanently denied');
-          // Inform the user that permission has been permanently denied
-          Alert.alert(
-            'Camera Permission',
-            'Camera access has been permanently denied. To use the camera, enable Camera permission for Vilvom in your device settings.',
-            [{ text: 'OK', style: 'default' }],
-          );
+          Alert.alert('Camera Permission', 'Enable Camera permission for Vilvom in your device settings.', [{ text: 'OK' }]);
         } else {
-          console.log('Camera permission denied');
-          Alert.alert(
-            'Camera Permission Required',
-            'Camera access is needed to take photos. Please allow camera permission to continue.',
-            [
-              {
-                text: 'Try Again',
-                onPress: () => requestCameraPermission(),
-              },
-              {
-                text: 'Cancel',
-                style: 'cancel',
-              },
-            ],
-          );
+          Alert.alert('Permission Required', 'Camera access is needed to take photos.', [
+            { text: 'Try Again', onPress: requestCameraPermission },
+            { text: 'Cancel', style: 'cancel' },
+          ]);
         }
-      } catch (err) {
-        console.warn('Permission request error:', err);
-        // Fallback: try to open camera anyway
-        Alert.alert(
-          'Permission Error',
-          'Unable to request permission. Opening camera...',
-          [
-            {
-              text: 'Continue',
-              onPress: () => openCamera(),
-            },
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-          ],
-        );
+      } catch {
+        openCamera();
       }
     } else {
-      // iOS: react-native-image-picker handles permissions automatically
-      console.log('iOS: opening camera directly');
       openCamera();
     }
   };
 
   const requestGalleryPermission = async () => {
-    console.log('Requesting gallery permission...');
-
     if (Platform.OS === 'android') {
       try {
-        // For Android, use PermissionsAndroid for better compatibility
-        const sdk =
-          typeof Platform.Version === 'number'
-            ? Platform.Version
-            : parseInt(String(Platform.Version), 10);
-
-        let permission: any;
-        if (sdk >= 33) {
-          // Android 13+ requires READ_MEDIA_IMAGES - use string directly
-          permission = 'android.permission.READ_MEDIA_IMAGES' as any;
-        } else {
-          // Older Android versions use READ_EXTERNAL_STORAGE
-          permission = PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-        }
-
+        const sdk = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10);
+        const permission = sdk >= 33
+          ? ('android.permission.READ_MEDIA_IMAGES' as any)
+          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
         const granted = await PermissionsAndroid.request(permission, {
           title: 'Gallery Permission',
-          message:
-            'Gallery access is needed to select photos for pest detection.',
+          message: 'Gallery access is needed to select photos for pest detection.',
           buttonPositive: 'Allow',
           buttonNegative: 'Deny',
         });
-
-        console.log('Gallery permission result:', granted);
-
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Gallery permission granted');
           openGallery();
         } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-          console.log('Gallery permission permanently denied');
-          Alert.alert(
-            'Gallery Permission',
-            'Gallery access has been permanently denied. To select photos, enable Storage permission for Vilvom in your device settings.',
-            [
-              { text: 'Open Settings', onPress: () => Linking.openSettings() },
-              { text: 'Cancel', style: 'cancel' },
-            ],
-          );
+          Alert.alert('Gallery Permission', 'Enable Storage permission in your device settings.', [
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            { text: 'Cancel', style: 'cancel' },
+          ]);
         } else {
-          console.log('Gallery permission denied');
-          Alert.alert(
-            'Gallery Permission Required',
-            'Gallery access is needed to select photos. Please allow storage permission to continue.',
-            [
-              {
-                text: 'Try Again',
-                onPress: () => requestGalleryPermission(),
-              },
-              {
-                text: 'Cancel',
-                style: 'cancel',
-              },
-            ],
-          );
+          Alert.alert('Permission Required', 'Gallery access is needed to select photos.', [
+            { text: 'Try Again', onPress: requestGalleryPermission },
+            { text: 'Cancel', style: 'cancel' },
+          ]);
         }
-      } catch (err) {
-        console.warn('Gallery permission request error:', err);
-        // Fallback: try to open gallery anyway (react-native-image-picker may handle permissions)
-        Alert.alert(
-          'Permission Error',
-          'Unable to request permission. Trying to open gallery...',
-          [
-            {
-              text: 'Continue',
-              onPress: () => openGallery(),
-            },
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-          ],
-        );
+      } catch {
+        openGallery();
       }
     } else {
-      // iOS: react-native-image-picker handles permissions automatically
-      console.log('iOS: opening gallery directly');
       openGallery();
     }
   };
 
   const openCamera = () => {
-    const options = {
-      mediaType: 'photo' as const,
-      quality: 0.8,
-      includeBase64: true,
-    };
     if (!launchCamera) {
-      Alert.alert(
-        'Missing module',
-        'react-native-image-picker is not installed or not linked. Install it with:\n\nnpm install react-native-image-picker\n\nand rebuild the app.',
-      );
+      Alert.alert('Missing module', 'react-native-image-picker is not installed.');
       return;
     }
-
     setLoading(true);
-    launchCamera(options, (response: any) => {
+    launchCamera({ mediaType: 'photo', quality: 0.8, includeBase64: true }, (response: any) => {
       setLoading(false);
-      if (response.didCancel) {
-        console.log('User cancelled camera');
-      } else if (response.errorMessage) {
-        Alert.alert('Error', response.errorMessage);
-      } else if (response.assets && response.assets[0]) {
-        // prefer uri, otherwise base64
-        const asset = response.assets[0];
-        const uri =
-          asset.uri ||
-          (asset.base64
-            ? `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`
-            : null);
-        if (uri) {
-          setSelectedImage(uri);
-          handleImageSelected(uri);
-        } else {
-          Alert.alert('Error', 'Could not read captured image');
-        }
-      } else {
-        Alert.alert('Error', 'No image returned from camera');
-      }
+      if (response.didCancel) return;
+      if (response.errorMessage) { Alert.alert('Error', response.errorMessage); return; }
+      const asset = response.assets?.[0];
+      const uri   = asset?.uri || (asset?.base64 ? `data:${asset.type || 'image/jpeg'};base64,${asset.base64}` : null);
+      if (uri) handleImageSelected(uri);
+      else Alert.alert('Error', 'Could not read captured image');
     });
   };
 
   const openGallery = () => {
-    const options = {
-      mediaType: 'photo' as const,
-      quality: 0.8,
-      includeBase64: true,
-      selectionLimit: 1,
-    };
-
     if (!launchImageLibrary) {
-      Alert.alert(
-        'Gallery Not Available',
-        'Image picker is not available. Please ensure react-native-image-picker is properly installed.',
-        [{ text: 'OK', style: 'default' }],
-      );
+      Alert.alert('Not Available', 'Image picker is not available.');
       return;
     }
-
-    console.log('Opening gallery with options:', options);
     setLoading(true);
-
-    launchImageLibrary(options, (response: any) => {
+    launchImageLibrary({ mediaType: 'photo', quality: 0.8, includeBase64: true, selectionLimit: 1 }, (response: any) => {
       setLoading(false);
-      console.log('Gallery response:', response);
-
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
+      if (response.didCancel) return;
+      if (response.errorCode === 'permission') {
+        Alert.alert('Permission Required', 'Grant gallery permission in device settings.', [
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
         return;
       }
-
-      if (response.errorCode) {
-        console.error('Gallery error code:', response.errorCode);
-        if (response.errorCode === 'permission') {
-          Alert.alert(
-            'Permission Required',
-            'Please grant gallery permission in your device settings to select photos.',
-            [
-              { text: 'Open Settings', onPress: () => Linking.openSettings() },
-              { text: 'Cancel', style: 'cancel' },
-            ],
-          );
-        } else {
-          Alert.alert(
-            'Gallery Error',
-            response.errorMessage || 'Failed to open gallery',
-          );
-        }
-        return;
-      }
-
-      if (response.errorMessage) {
-        console.error('Gallery error message:', response.errorMessage);
-        Alert.alert('Gallery Error', response.errorMessage);
-        return;
-      }
-
-      if (response.assets && response.assets[0]) {
-        const asset = response.assets[0];
-        console.log('Selected asset:', {
-          uri: asset.uri,
-          type: asset.type,
-          size: asset.fileSize,
-        });
-
-        const uri =
-          asset.uri ||
-          (asset.base64
-            ? `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`
-            : null);
-
-        if (uri) {
-          setSelectedImage(uri);
-          handleImageSelected(uri);
-        } else {
-          Alert.alert(
-            'Error',
-            'Could not read selected image. Please try again.',
-          );
-        }
-      } else {
-        Alert.alert('Error', 'No image was selected. Please try again.');
-      }
+      if (response.errorMessage) { Alert.alert('Error', response.errorMessage); return; }
+      const asset = response.assets?.[0];
+      const uri   = asset?.uri || (asset?.base64 ? `data:${asset.type || 'image/jpeg'};base64,${asset.base64}` : null);
+      if (uri) handleImageSelected(uri);
+      else Alert.alert('Error', 'No image was selected. Please try again.');
     });
   };
 
-  // Always use native camera picker from react-native-image-picker
-
-  // No in-app CameraOverlay: always open native camera picker from tab
-
-  const analyzeImage = async () => {
-    if (!selectedImage) {
-      Alert.alert('No Image', 'Please select an image first');
-      return;
-    }
-
-    setAnalyzing(true);
-    try {
-      console.log(
-        '[CameraScreen] analyzeImage - calling detectPest for',
-        selectedImage,
-      );
-      const result = await detectPest(selectedImage as string);
-      console.log(
-        '[CameraScreen] analyzeImage result:',
-        result && { prediction: result.prediction },
-      );
-
-      // Navigate to questionnaire screen with type assertion
-      (navigation as any).navigate('PestQuestionnaire', { result });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to analyze image. Please try again.');
-    } finally {
-      setAnalyzing(false);
-    }
-  };
+  const insets = useSafeAreaInsets();
+  const busy = loading || analyzing;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Logo Header */}
-      <LogoHeader
-        logoSize={{ width: 80, height: 80 }}
-        marginTop={10}
-        position="top-left"
-      />
-
-      {/* Main Content */}
-      <View style={styles.content}>
-        <Text style={styles.instruction}>
-          Choose how you'd like to detect pests in your tea plants
-        </Text>
-
-        {/* Main Options */}
-        <View style={styles.optionsContainer}>
-          {/* Camera Option */}
-          <TouchableOpacity
-            style={[styles.optionButton, styles.cameraButton]}
-            onPress={requestCameraPermission}
-            disabled={loading || analyzing}
-          >
-            <Icon name="camera-alt" size={32} color="#fff" />
-            <Text style={styles.optionTitle}>Scan with Camera</Text>
-            <Text style={styles.optionSubtitle}>Take a photo to analyze</Text>
-          </TouchableOpacity>
-
-          {/* Gallery Option */}
-          <TouchableOpacity
-            style={[styles.optionButton, styles.galleryButton]}
-            onPress={requestGalleryPermission}
-            disabled={loading || analyzing}
-          >
-            <Icon name="photo-library" size={32} color="#fff" />
-            <Text style={styles.optionTitle}>Upload from Gallery</Text>
-            <Text style={styles.optionSubtitle}>Choose an existing photo</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Loading State */}
-        {(loading || analyzing) && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4CAF50" />
-            <Text style={styles.loadingText}>
-              {analyzing ? 'Analyzing image...' : 'Opening...'}
-            </Text>
-          </View>
-        )}
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => (navigation as any).goBack()} style={styles.backBtn}>
+          <MaterialCommunityIcons name="arrow-left" size={22} color="#1B5E20" />
+        </TouchableOpacity>
+        <Image
+          source={require('../../assets/vilvom_logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <View style={styles.headerRight} />
       </View>
 
-      {/* No floating gallery button: camera opens directly from bottom tab */}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-      {/* in-app CameraOverlay disabled: always open native camera on tab press */}
+        {/* ── Title block ── */}
+        <Text style={styles.title}>AI Pest Detection</Text>
+        <Text style={styles.subtitle}>
+          Scan a tea leaf to instantly identify pests and get treatment recommendations
+        </Text>
+
+        {/* ── Scan frame ── */}
+        <View style={styles.frameWrap}>
+          {busy ? (
+            <View style={styles.frameInner}>
+              <ActivityIndicator size="large" color="#2E7D32" />
+              <Text style={styles.analyzingText}>
+                {analyzing ? 'Analyzing image…' : 'Opening…'}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.frameInner}>
+              <MaterialCommunityIcons name="leaf" size={64} color="#A5D6A7" />
+              <Text style={styles.frameTip}>Point at affected tea leaf</Text>
+            </View>
+          )}
+          {/* Corner markers */}
+          <View style={[styles.corner, styles.cornerTL]} />
+          <View style={[styles.corner, styles.cornerTR]} />
+          <View style={[styles.corner, styles.cornerBL]} />
+          <View style={[styles.corner, styles.cornerBR]} />
+        </View>
+
+        {/* ── Tips ── */}
+        <View style={styles.tipsCard}>
+          <Text style={styles.tipsTitle}>Tips for best results</Text>
+          {TIPS.map((tip, i) => (
+            <View key={i} style={styles.tipRow}>
+              <View style={styles.tipIcon}>
+                <MaterialCommunityIcons name={tip.icon as any} size={16} color="#2E7D32" />
+              </View>
+              <Text style={styles.tipText}>{tip.text}</Text>
+            </View>
+          ))}
+        </View>
+
+      </ScrollView>
+
+      {/* ── Action buttons (sticky bottom) ── */}
+      <View style={[styles.actionsWrap, { paddingBottom: insets.bottom + 16 }]}>
+        <TouchableOpacity
+          style={[styles.primaryBtn, busy && styles.btnDisabled]}
+          onPress={requestCameraPermission}
+          disabled={busy}
+          activeOpacity={0.85}
+        >
+          <MaterialCommunityIcons name="camera" size={22} color="#FFF" />
+          <Text style={styles.primaryBtnText}>Scan with Camera</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.secondaryBtn, busy && styles.btnDisabled]}
+          onPress={requestGalleryPermission}
+          disabled={busy}
+          activeOpacity={0.85}
+        >
+          <MaterialCommunityIcons name="image-multiple-outline" size={22} color="#2E7D32" />
+          <Text style={styles.secondaryBtnText}>Choose from Gallery</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
+const CORNER = 22;
+const BORDER = 3;
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
+  safe:   { flex: 1, backgroundColor: '#F5F7F5' },
+
+  /* Header */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8F5E9',
   },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  instruction: {
-    fontSize: 18,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 26,
-    fontWeight: '500',
-  },
-  optionsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 20,
-  },
-  optionButton: {
+  backBtn:     { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  logo:        { width: 100, height: 36 },
+  headerRight: { width: 36 },
+
+  /* Scroll */
+  scroll: { padding: 20, paddingBottom: 8, alignItems: 'center' },
+
+  title:    { fontSize: 22, fontWeight: '800', color: '#1B5E20', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 13, color: '#666', textAlign: 'center', lineHeight: 19, marginBottom: 28, paddingHorizontal: 10 },
+
+  /* Scan frame */
+  frameWrap: {
+    width:  FRAME_SIZE,
+    height: FRAME_SIZE,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    marginBottom: 28,
+    position: 'relative',
   },
-  cameraButton: {
-    backgroundColor: '#4CAF50',
-  },
-  galleryButton: {
-    backgroundColor: '#2196F3',
-  },
-  optionTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  optionSubtitle: {
-    color: '#fff',
-    fontSize: 14,
-    opacity: 0.9,
-    marginTop: 4,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 30,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 12,
-  },
-  processingOverlay: {
+  frameInner: { alignItems: 'center', gap: 12 },
+  analyzingText: { fontSize: 14, color: '#2E7D32', fontWeight: '600' },
+  frameTip:      { fontSize: 13, color: '#81C784', textAlign: 'center' },
+
+  /* Corner markers */
+  corner: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: CORNER,
+    height: CORNER,
+    borderColor: '#2E7D32',
+  },
+  cornerTL: { top: 12, left: 12,   borderTopWidth: BORDER, borderLeftWidth: BORDER,  borderTopLeftRadius: 6 },
+  cornerTR: { top: 12, right: 12,  borderTopWidth: BORDER, borderRightWidth: BORDER, borderTopRightRadius: 6 },
+  cornerBL: { bottom: 12, left: 12,  borderBottomWidth: BORDER, borderLeftWidth: BORDER,  borderBottomLeftRadius: 6 },
+  cornerBR: { bottom: 12, right: 12, borderBottomWidth: BORDER, borderRightWidth: BORDER, borderBottomRightRadius: 6 },
+
+  /* Tips */
+  tipsCard: {
+    width: '100%',
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    padding: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    marginBottom: 12,
+  },
+  tipsTitle: { fontSize: 13, fontWeight: '700', color: '#333', marginBottom: 12 },
+  tipRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 },
+  tipIcon:   { width: 30, height: 30, borderRadius: 15, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center' },
+  tipText:   { flex: 1, fontSize: 13, color: '#555', lineHeight: 18 },
+
+  /* Action buttons */
+  actionsWrap: {
+    padding: 16,
+    gap: 10,
+    backgroundColor: '#F5F7F5',
+    borderTopWidth: 1,
+    borderTopColor: '#E8F5E9',
+  },
+  primaryBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 999,
+    gap: 10,
+    backgroundColor: '#2E7D32',
+    paddingVertical: 15,
+    borderRadius: 14,
+    elevation: 3,
+    shadowColor: '#2E7D32',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
+  primaryBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#FFF',
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#2E7D32',
+  },
+  secondaryBtnText: { color: '#2E7D32', fontSize: 16, fontWeight: '600' },
+
+  btnDisabled: { opacity: 0.5 },
 });
 
 export default CameraScreen;

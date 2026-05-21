@@ -23,7 +23,6 @@ import LatestTeaNewsScreen       from '../screens/LatestTeaNewsScreen';
 import RecentOrdersScreen        from '../screens/RecentOrdersScreen';
 import OrderTrackingScreen       from '../screens/OrderTrackingScreen';
 import ChangePasswordScreen      from '../screens/ChangePasswordScreen';
-import ForgotPasswordScreen      from '../screens/ForgotPasswordScreen';
 import BecomeSellerScreen        from '../screens/BecomeSellerScreen';
 import EditProfileScreen         from '../screens/EditProfileScreen';
 import AdminNavigator            from './AdminNavigator';
@@ -72,7 +71,8 @@ const AppNavigator = () => (
         {props => (
           <GetStartedScreen
             {...props}
-            onGetStarted={() => props.navigation.replace('Signup')}
+            onGetStarted={() => props.navigation.replace('Login')}
+            onSignup={() => props.navigation.navigate('Signup')}
           />
         )}
       </Stack.Screen>
@@ -94,7 +94,6 @@ const AppNavigator = () => (
       <Stack.Screen name="RecentOrders"   component={RecentOrdersScreen} />
       <Stack.Screen name="OrderTracking"  component={OrderTrackingScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="BecomeSeller"   component={BecomeSellerScreen} />
       <Stack.Screen name="EditProfile"    component={EditProfileScreen} />
       <Stack.Screen name="AdminPanel"      component={AdminNavigator} />

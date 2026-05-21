@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Dimensions,
   TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -63,17 +64,29 @@ async function fetchBookings(page: number, status: string): Promise<PaginatedRes
   return data;
 }
 
+async function patchStatus(id: string, status: string): Promise<void> {
+  const token = await AsyncStorage.getItem('authToken');
+  const res = await fetch(`${API_BASE_URL}/admin/drone-bookings/${id}/status`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to update status');
+}
+
 export default function AdminDroneBookings() {
   const [bookings, setBookings]     = useState<DroneBooking[]>([]);
   const [page, setPage]             = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal]           = useState(0);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError]           = useState<string | null>(null);
-  const [search, setSearch]         = useState('');
+  const [refreshing, setRefreshing]   = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [search, setSearch]           = useState('');
+  const [updating, setUpdating]       = useState<string | null>(null); // id being updated
 
   const load = useCallback(async (pg: number, status: string, reset: boolean) => {
     try {
@@ -108,6 +121,35 @@ export default function AdminDroneBookings() {
     load(page + 1, statusFilter, false);
   };
 
+  const handleMarkComplete = (item: DroneBooking) => {
+    if (item.status === 'completed') return;
+    Alert.alert(
+      'Mark as Complete',
+      `Mark the booking by ${item.phone} as completed?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Complete',
+          style: 'default',
+          onPress: async () => {
+            setUpdating(item._id);
+            try {
+              await patchStatus(item._id, 'completed');
+              // Optimistic update — flip status locally
+              setBookings(prev =>
+                prev.map(b => b._id === item._id ? { ...b, status: 'completed' } : b),
+              );
+            } catch (e: any) {
+              Alert.alert('Error', e.message || 'Could not update booking');
+            } finally {
+              setUpdating(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const filtered = search.trim()
     ? bookings.filter(b =>
         b.phone?.includes(search.trim()) ||
@@ -116,6 +158,9 @@ export default function AdminDroneBookings() {
     : bookings;
 
   const renderBooking = ({ item }: { item: DroneBooking }) => {
+    const isCompleted = item.status === 'completed';
+    const isCancelled = item.status === 'cancelled';
+    const isUpdating  = updating === item._id;
     const meta   = STATUS_META[item.status] || { color: '#757575', bg: '#F5F5F5', icon: 'help-circle-outline' };
     const service = SERVICE_LABELS[item.serviceType] || item.serviceType;
     const date   = item.preferredDate
@@ -169,7 +214,32 @@ export default function AdminDroneBookings() {
           <Text style={styles.notes} numberOfLines={2}>{item.additionalNotes}</Text>
         )}
 
-        <Text style={styles.bookedAt}>Booked {booked}</Text>
+        <View style={styles.cardFooter}>
+          <Text style={styles.bookedAt}>Booked {booked}</Text>
+
+          {isCompleted ? (
+            <View style={styles.completedTag}>
+              <MaterialCommunityIcons name="check-circle" size={14} color="#2E7D32" />
+              <Text style={styles.completedTagText}>Completed</Text>
+            </View>
+          ) : isCancelled ? null : (
+            <TouchableOpacity
+              style={[styles.completeBtn, isUpdating && styles.completeBtnDisabled]}
+              onPress={() => handleMarkComplete(item)}
+              disabled={isUpdating}
+              activeOpacity={0.7}
+            >
+              {isUpdating ? (
+                <ActivityIndicator size={13} color="#FFF" />
+              ) : (
+                <MaterialCommunityIcons name="check-circle-outline" size={14} color="#FFF" />
+              )}
+              <Text style={styles.completeBtnText}>
+                {isUpdating ? 'Updating…' : 'Mark Complete'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   };
@@ -320,7 +390,31 @@ const styles = StyleSheet.create({
   infoRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   infoText: { fontSize: 13, color: '#444' },
   notes:    { fontSize: 12, color: '#888', fontStyle: 'italic', marginTop: 4, lineHeight: 17 },
-  bookedAt: { fontSize: 11, color: '#BDBDBD', marginTop: 8 },
+  cardFooter:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  bookedAt:         { fontSize: 11, color: '#BDBDBD' },
+
+  completeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#2E7D32',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  completeBtnDisabled: { backgroundColor: '#A5D6A7' },
+  completeBtnText:     { fontSize: 12, color: '#FFF', fontWeight: '600' },
+
+  completedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  completedTagText: { fontSize: 12, color: '#2E7D32', fontWeight: '600' },
 
   empty:      { paddingTop: 80, alignItems: 'center', gap: 8 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: '#555' },

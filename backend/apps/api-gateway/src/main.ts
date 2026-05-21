@@ -13,9 +13,11 @@ async function bootstrap() {
   // Get configuration service
   const configService = app.get(ConfigService);
   
-  // Increase JSON body limit to 10 MB (processed_image base64 can be ~1.5 MB)
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ limit: '10mb', extended: true }));
+  app.use(express.json({ limit: '2mb' }));
+  app.use(express.urlencoded({ limit: '2mb', extended: true }));
+
+  // Serve processed/original pest images as static files
+  app.use('/uploads', express.static('uploads'));
 
   // Security middleware
   app.use(helmet());

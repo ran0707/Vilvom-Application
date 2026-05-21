@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Get,
   Body,
   Param,
@@ -15,6 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { PestService } from './pest.service';
 import { CreatePestDetectionDto } from '@app/common';
@@ -27,6 +29,7 @@ export class PestController {
   constructor(private readonly pestService: PestService) {}
 
   @Post('detect')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Detect pest from uploaded image' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -115,6 +118,16 @@ export class PestController {
       parseFloat(lng),
       radius ? parseInt(radius) : 10,
     );
+  }
+
+  @Patch('detections/:id')
+  @ApiOperation({ summary: 'Update detection with location, questionnaire, and chat' })
+  async updateDetection(
+    @Param('id') detectionId: string,
+    @Body() body: any,
+  ) {
+    // userId extracted manually so unauthenticated (guest) requests still work
+    return this.pestService.updateDetection(detectionId, undefined, body);
   }
 
   @Get('statistics')

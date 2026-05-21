@@ -18,6 +18,7 @@ const getAuthToken = async (): Promise<string | null> => {
 };
 
 export interface PestDetectionResult {
+  _id?: string | null;
   prediction: string;
   confidence: number;
   bounding_box: number[];
@@ -30,6 +31,7 @@ export interface PestDetectionResult {
 
 export const detectPest = async (
   imageUri: string,
+  coords?: { lat: number; lng: number },
 ): Promise<PestDetectionResult> => {
   try {
     console.log('[pestDetectionApi] detectPest - start', {
@@ -103,7 +105,15 @@ export const detectPest = async (
 
     // Backend expects field name 'image', not 'file'
     formData.append('image', imageData);
-    
+
+    // Include location as JSON string so backend saves it directly on the detection record
+    if (coords?.lat && coords?.lng) {
+      formData.append('location', JSON.stringify({
+        type: 'Point',
+        coordinates: [coords.lng, coords.lat],
+      }));
+    }
+
     console.log('[pestDetectionApi] FormData prepared with field "image"');
 
     // Use a timeout to avoid indefinite hangs
@@ -238,6 +248,7 @@ export const detectPest = async (
     // Transform the API response to match our interface
     // Backend uses 'pestName', our interface expects 'prediction'
     return {
+      _id: detectionData.id || detectionData._id || null,  // include DB id for later updates
       prediction: detectionData.pestName || detectionData.prediction || 'Unknown',
       confidence: detectionData.confidence || 0,
       bounding_box: detectionData.boundingBox || detectionData.bounding_box || [],

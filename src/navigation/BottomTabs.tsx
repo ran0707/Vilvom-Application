@@ -2,9 +2,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeTab from '../tabs/HomeTab';
 import ProfileTab from '../tabs/ProfileTab';
-import MarketTab from '../tabs/MarketTab';
 import SprayTab from '../tabs/Spray';
 import DroneTab from '../tabs/DroneTab';
 // Community is temporarily disabled — keeping import for future re-enable
@@ -17,14 +17,19 @@ const ICON_SIZE = 25;
 
 type TabIconProps = { color: string; focused: boolean };
 
-const homeIcon      = ({ color }: TabIconProps) => <MaterialCommunityIcons name="home-outline"          size={ICON_SIZE} color={color} />;
-const marketIcon    = ({ color }: TabIconProps) => <MaterialCommunityIcons name="leaf-circle-outline"   size={ICON_SIZE} color={color} />;
-const droneIcon     = ({ color }: TabIconProps) => <MaterialCommunityIcons name="quadcopter"            size={ICON_SIZE} color={color} />;
-const sprayIcon     = ({ color }: TabIconProps) => <MaterialCommunityIcons name="water-outline"         size={ICON_SIZE} color={color} />;
-const profileIcon   = ({ color }: TabIconProps) => <MaterialCommunityIcons name="account-outline"       size={ICON_SIZE} color={color} />;
+const homeIcon    = ({ color }: TabIconProps) => <MaterialCommunityIcons name="home-outline"    size={ICON_SIZE} color={color} />;
+const droneIcon   = ({ color }: TabIconProps) => <MaterialCommunityIcons name="quadcopter"      size={ICON_SIZE} color={color} />;
+const sprayIcon   = ({ color }: TabIconProps) => <MaterialCommunityIcons name="water-outline"   size={ICON_SIZE} color={color} />;
+const profileIcon = ({ color }: TabIconProps) => <MaterialCommunityIcons name="account-outline" size={ICON_SIZE} color={color} />;
+
+const TAB_CONTENT_HEIGHT = 56; // icon + label, no inset
 
 const BottomTabs = () => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  // Give the tab bar enough room for content + system navigation area
+  const tabBarHeight   = TAB_CONTENT_HEIGHT + insets.bottom;
+  const tabBarPadBottom = insets.bottom + 4;
 
   return (
     <Tab.Navigator
@@ -33,9 +38,9 @@ const BottomTabs = () => {
         tabBarInactiveTintColor: '#9E9E9E',
         headerShown: false,
         tabBarStyle: {
-          height: Platform.OS === 'android' ? 72 : 90,
-          paddingBottom: Platform.OS === 'android' ? 16 : 32,
-          paddingTop: 4,
+          height: tabBarHeight,
+          paddingBottom: tabBarPadBottom,
+          paddingTop: 8,
           borderTopWidth: 1,
           borderTopColor: '#F0F0F0',
           elevation: 10,
@@ -57,15 +62,6 @@ const BottomTabs = () => {
           title: t('nav.main_tabs') as string,
           tabBarLabel: t('nav.main_tabs') as string,
           tabBarIcon: homeIcon,
-        }}
-      />
-      <Tab.Screen
-        name="PesticideHub"
-        component={MarketTab}
-        options={{
-          title: t('market.title') as string,
-          tabBarLabel: t('market.title') as string,
-          tabBarIcon: marketIcon,
         }}
       />
       <Tab.Screen

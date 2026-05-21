@@ -85,7 +85,40 @@
       "message": "छोटा संदेश / आवश्यकताएँ"
     },
     "contact_provider": "प्रदाता से संपर्क करें",
-    "info_response_time": "24 घंटे के भीतर जवाब दिया जाएगा। मूल्य वर्ग के अनुसार।"
+    "info_response_time": "24 घंटे के भीतर जवाब दिया जाएगा। मूल्य वर्ग के अनुसार।",
+    "no_predictions": "अभी तक कोई पूर्वानुमान नहीं — यहाँ परिणाम देखने के लिए एक पौधे को स्कैन करें",
+    "name": "आपका नाम",
+    "phone": "फ़ोन नंबर",
+    "message": "छोटा संदेश / आवश्यकताएँ",
+    "hero_title": "ड्रोन सेवाएँ",
+    "hero_sub": "अपनी चाय बागान के लिए प्रमाणित ड्रोन ऑपरेटर बुक करें",
+    "choose_service": "एक सेवा चुनें",
+    "schedule_slot": "अपना स्लॉट शेड्यूल करें",
+    "date_label": "तारीख",
+    "location_ph": "खेत का स्थान / पता",
+    "area_ph": "एकड़ में क्षेत्र (वैकल्पिक)",
+    "notes_hide": "नोट्स छुपाएँ",
+    "notes_add": "विशेष नोट्स जोड़ें (वैकल्पिक)",
+    "notes_ph": "किसी विशेष आवश्यकता का वर्णन करें",
+    "book_now": "अभी बुक करें",
+    "info_certified": "सभी ऑपरेटर प्रमाणित हैं। हम 24 घंटे में पुष्टि करते हैं।",
+    "before_11": "सुबह 11 बजे से पहले",
+    "after_2": "दोपहर 2 बजे के बाद",
+    "request_title": "ड्रोन सेवा अनुरोध",
+    "select_service": "एक सेवा चुनें...",
+    "select_time_slot": "समय स्लॉट चुनें...",
+    "tap_calendar": "कैलेंडर दृश्य खोलने के लिए टैप करें",
+    "submit_request": "अनुरोध सबमिट करें",
+    "select_urgency": "आपातकाल स्तर चुनें",
+    "low_priority": "कम प्राथमिकता",
+    "medium_priority": "मध्यम प्राथमिकता",
+    "high_priority": "उच्च प्राथमिकता",
+    "urgent": "तत्काल",
+    "skip_rating": "रेटिंग छोड़ें",
+    "rate_service_title": "ड्रोन सेवा को रेट करें",
+    "select_service_modal": "सेवा प्रकार चुनें",
+    "select_time_modal": "समय स्लॉट चुनें",
+    "select_date_modal": "तारीख चुनें"
   },
 
   "profile": {
@@ -106,7 +139,21 @@
     "order_tracking": "ऑर्डर ट्रैकिंग",
     "notifications": "सूचनाएँ",
     "help_support": "मदद और समर्थन",
-    "field_overview": "फील्ड अवलोकन"
+    "field_overview": "फील्ड अवलोकन",
+    "app_permissions": "ऐप अनुमतियाँ",
+    "language": "भाषा",
+    "app_language_label": "ऐप भाषा",
+    "services": "सेवाएँ",
+    "more": "और अधिक",
+    "tea_farmer": "चाय किसान",
+    "become_seller": "विक्रेता बनें",
+    "feedback": "प्रतिक्रिया",
+    "grant": "अनुमति दें"
+  },
+
+  "language_screen": {
+    "title": "ऐप भाषा",
+    "subtitle": "अपनी पसंदीदा भाषा चुनें"
   },
 
   "home": {
@@ -171,7 +218,13 @@
       "no_upcoming": "कोई आगामी कार्य नहीं",
       "add_spray_log": "स्प्रे लॉग जोड़ें"
     },
-    "no_predictions": "कोई भविष्यवाणी नहीं — एक पौधे को स्कैन करें और यहाँ परिणाम दिखाई देंगे"
+    "no_predictions": "कोई भविष्यवाणी नहीं — एक पौधे को स्कैन करें और यहाँ परिणाम दिखाई देंगे",
+    "using_coimbatore": "कोयम्बटूर स्थान का उपयोग कर रहे हैं...",
+    "success_stories": "सफलता की कहानियाँ",
+    "farmers_helped": "मदद किए गए किसान",
+    "hectares_protected": "संरक्षित हेक्टेयर",
+    "avg_cost_savings": "औसत लागत बचत",
+    "what_farmers_say": "किसान क्या कहते हैं"
   },
 
   "market": {
@@ -188,7 +241,9 @@
       "green_tea": "ग्रीन टी",
       "saplings": "सैपलिंग्स",
       "gear": "गियर",
-      "equipment": "उपकरण"
+      "equipment": "उपकरण",
+      "pesticides": "कीटनाशक",
+      "fertilizers": "उर्वरक"
     }
   },
 
@@ -213,7 +268,15 @@
       "notes": "नोट्स"
     },
     "save": "सहेजें",
-    "add": "जोड़ें"
+    "add": "जोड़ें",
+    "page_sub": "चाय बागान स्प्रे रिकॉर्ड",
+    "sprayer_hand": "हाथ",
+    "sprayer_machine": "मशीन",
+    "sprayer_drone": "ड्रोन",
+    "no_logs_yet": "अभी तक कोई लॉग नहीं",
+    "empty_hint": "आज की स्प्रे गतिविधि दर्ज करने के लिए लॉग जोड़ें",
+    "status_done": "पूर्ण",
+    "status_pending": "लंबित"
   },
 
   "weather": {
@@ -268,7 +331,7 @@
     "step_recommend": "हमारी सिफारिश",
     "take_button": "तस्वीर लें",
     "info_heading": "कीट संक्रमण",
-    "info_sub": "त्वरित कीट निदान और सरल सिफारिशों के लिए पत्तियों को स्कैन करें।",
+    "info_sub": "तस्वीर लें और सुझाव पाएं।",
     "get_help": "मदद प्राप्त करें",
     "advisory_title": "सलाह संपर्क",
     "advisory_sub": "विशेषज्ञ सहायता प्राप्त करें",
@@ -277,6 +340,11 @@
     "auction_title": "नीलाम भाव",
     "auction_sub": "हाल के औसत नीलामी भाव और चार्ट",
     "recent_heading": "हाल की पहचान",
+    "card_badge": "AI सेवा",
+    "scan_now": "अभी स्कैन करें",
+    "learn_more": "और जानें",
+    "feat_detection": "कीट पहचान",
+    "feat_ai": "AI अनुशंसाएँ",
     "severity": {
       "mild": "हल्का",
       "moderate": "मध्यम",

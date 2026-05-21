@@ -89,7 +89,7 @@ export const getRecommendation = getPestDetection;
 export const getNearbyRecommendations = async (
   lat: number,
   lng: number,
-  radiusMeters = 5000,
+  radiusKm = 5,   // backend expects km; multiplies by 1000 internally
 ) => {
   const token = await getAuthToken();
   const headers: Record<string, string> = {
@@ -99,13 +99,33 @@ export const getNearbyRecommendations = async (
 
   const qs = `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(
     lng,
-  )}&radius=${encodeURIComponent(radiusMeters)}`;
+  )}&radius=${encodeURIComponent(radiusKm)}`;
   const res = await fetch(`${API_BASE_URL}/pest/nearby${qs}`, {
     method: 'GET',
     headers,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Nearby fetch failed');
+  return data;
+};
+
+export const patchDetection = async (id: string, payload: any) => {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(
+    `${API_BASE_URL}/pest/detections/${encodeURIComponent(id)}`,
+    {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(payload),
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Patch failed');
   return data;
 };
 
@@ -134,14 +154,14 @@ export const updatePestDetection = async (id: string, payload: any) => {
 export const updateRecommendation = updatePestDetection;
 
 export default {
-  // New functions aligned with backend API
   createPestDetection,
   listPestDetections,
   getPestDetection,
   updatePestDetection,
+  patchDetection,
   listRecommendations,
   getNearbyRecommendations,
-  // Legacy functions for backwards compatibility
+  // Legacy aliases
   saveRecommendation,
   getRecommendation,
   updateRecommendation,

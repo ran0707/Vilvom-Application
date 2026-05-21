@@ -85,7 +85,36 @@
     "phone": "Phone number",
     "message": "Brief message / requirements",
     "contact_provider": "Contact Provider",
-    "info_response_time": "We will respond within 24 hours. Prices depend on field size and services."
+    "info_response_time": "We will respond within 24 hours. Prices depend on field size and services.",
+    "hero_title": "Drone Services",
+    "hero_sub": "Book certified drone operators for your tea plantation",
+    "choose_service": "Choose a Service",
+    "schedule_slot": "Schedule Your Slot",
+    "date_label": "Date",
+    "location_ph": "Farm location / address",
+    "area_ph": "Area in acres (optional)",
+    "notes_hide": "Hide notes",
+    "notes_add": "Add special notes (optional)",
+    "notes_ph": "Describe any special requirements",
+    "book_now": "Book Now",
+    "info_certified": "All operators are certified. We confirm within 24 hours.",
+    "before_11": "Before 11 AM",
+    "after_2": "After 2 PM",
+    "request_title": "Drone Service Request",
+    "select_service": "Select a service...",
+    "select_time_slot": "Select time slot...",
+    "tap_calendar": "Tap to open calendar view",
+    "submit_request": "Submit Request",
+    "select_urgency": "Select Urgency Level",
+    "low_priority": "Low Priority",
+    "medium_priority": "Medium Priority",
+    "high_priority": "High Priority",
+    "urgent": "Urgent",
+    "skip_rating": "Skip Rating",
+    "rate_service_title": "Rate Drone Service",
+    "select_service_modal": "Select Service Type",
+    "select_time_modal": "Select Time Slot",
+    "select_date_modal": "Select Date"
   },
 
   "profile": {
@@ -106,7 +135,21 @@
     "order_tracking": "Order Tracking",
     "notifications": "Notifications",
     "help_support": "Help & Support",
-    "field_overview": "Field Overview"
+    "field_overview": "Field Overview",
+    "app_permissions": "App Permissions",
+    "language": "Language",
+    "app_language_label": "App Language",
+    "services": "Services",
+    "more": "More",
+    "tea_farmer": "Tea Farmer",
+    "become_seller": "Become a Seller",
+    "feedback": "Feedback",
+    "grant": "Grant"
+  },
+
+  "language_screen": {
+    "title": "App Language",
+    "subtitle": "Select your preferred language"
   },
 
   "home": {
@@ -184,7 +227,13 @@
       "add_spray_log": "Add a spray log to get started"
     },
     "no_detections": "No detections yet",
-    "no_pests_title": "No pests detected"
+    "no_pests_title": "No pests detected",
+    "using_coimbatore": "Using Coimbatore location...",
+    "success_stories": "Success Stories",
+    "farmers_helped": "Farmers helped",
+    "hectares_protected": "Hectares protected",
+    "avg_cost_savings": "Avg cost savings",
+    "what_farmers_say": "What farmers say"
   },
 
   "market": {
@@ -207,7 +256,9 @@
       "green_tea": "Green Tea",
       "saplings": "Saplings",
       "gear": "Gear",
-      "equipment": "Equipment"
+      "equipment": "Equipment",
+      "pesticides": "Pesticides",
+      "fertilizers": "Fertilizers"
     }
   },
 
@@ -232,7 +283,15 @@
       "notes": "Notes"
     },
     "save": "Save",
-    "add": "Add"
+    "add": "Add",
+    "page_sub": "Tea garden spray records",
+    "sprayer_hand": "Hand",
+    "sprayer_machine": "Machine",
+    "sprayer_drone": "Drone",
+    "no_logs_yet": "No logs yet",
+    "empty_hint": "Tap Add Log to record today's spray activity",
+    "status_done": "Done",
+    "status_pending": "Pending"
   },
   "orders": {
     "empty": "No recent orders",
@@ -298,7 +357,7 @@
     "step_recommend": "Our Recommendation",
     "take_button": "Take picture",
     "info_heading": "Pest Infestation",
-    "info_sub": "Scan leaves for a quick pest diagnosis and simple recommendations.",
+    "info_sub": "Take a picture and Get the Recommendation.",
     "get_help": "Get Help",
     "advisory_title": "Advisory Contact",
     "advisory_sub": "Get expert help",
@@ -307,6 +366,11 @@
     "auction_title": "Auction Prices",
     "auction_sub": "Latest average auction prices & chart",
     "recent_heading": "Recent Diagnosis",
+    "card_badge": "AI Service",
+    "scan_now": "Scan Now",
+    "learn_more": "Learn More",
+    "feat_detection": "Pest Detection",
+    "feat_ai": "AI Recommendations",
     "severity": {
       "mild": "Mild",
       "moderate": "Moderate",

@@ -5,17 +5,17 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  Linking,
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
-import { useNavigation } from '@react-navigation/native';
-
 const DroneBannerCard = () => {
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
   const handleContactPress = () => {
     navigation.navigate('Drone');
   };
@@ -24,7 +24,7 @@ const DroneBannerCard = () => {
     <View style={styles.bannerContainer}>
       {/* Product Badge */}
       <View style={styles.productBadge}>
-        <Text style={styles.productText}>Drone Service</Text>
+        <Text style={styles.productText}>{t('components.drone_banner.badge')}</Text>
       </View>
 
       {/* Main Content Area */}
@@ -36,14 +36,14 @@ const DroneBannerCard = () => {
             numberOfLines={1}
             ellipsizeMode={'tail'}
           >
-            Tea plant Drone Solutions
+            {t('components.drone_banner.title')}
           </Text>
           <Text
             style={styles.description}
             numberOfLines={1}
             ellipsizeMode={'tail'}
           >
-            Precision spraying and aerial mapping for tea farms.
+            {t('components.drone_banner.description')}
           </Text>
 
           {/* Quick Features */}
@@ -55,7 +55,7 @@ const DroneBannerCard = () => {
                 numberOfLines={1}
                 ellipsizeMode={'tail'}
               >
-                Pesticide Spraying
+                {t('components.drone_banner.pesticide_spraying')}
               </Text>
             </View>
             <View style={styles.featureItem}>
@@ -65,7 +65,7 @@ const DroneBannerCard = () => {
                 numberOfLines={1}
                 ellipsizeMode={'tail'}
               >
-                Aerial Mapping
+                {t('components.drone_banner.aerial_mapping')}
               </Text>
             </View>
           </View>
@@ -75,7 +75,7 @@ const DroneBannerCard = () => {
             style={styles.contactButton}
             onPress={handleContactPress}
           >
-            <Text style={styles.contactText}>for more info </Text>
+            <Text style={styles.contactText}>{t('components.drone_banner.contact_us')}</Text>
           </TouchableOpacity>
         </View>
 

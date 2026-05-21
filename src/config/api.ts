@@ -52,6 +52,11 @@ export const API_ENDPOINTS = {
     REQUESTS:   '/drone/requests',
     STATISTICS: '/drone/statistics',
   },
+  FEEDBACK: {
+    CREATE: '/feedback',
+    PUBLIC: '/feedback/public',
+    CHECK:  '/feedback/check',
+  },
   HEALTH: '/health',
 } as const;
 

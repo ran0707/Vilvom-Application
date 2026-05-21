@@ -6,4 +6,5 @@
 export const ADMIN_PHONES: string[] = [
   '+917903665741', // Primary admin — replace with your number
   // '+91XXXXXXXXXX', // Secondary admin
+  '+919842697157'
 ];

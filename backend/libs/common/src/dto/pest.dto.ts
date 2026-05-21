@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsObject, IsArray, IsNumber, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 class LocationDto {
@@ -135,11 +135,16 @@ export class CreatePestDetectionDto {
   @IsString()
   original_image?: string;
 
-  @ApiPropertyOptional({ description: 'Location where pest was detected', type: LocationDto })
+  @ApiPropertyOptional({ description: 'Location where pest was detected (GeoJSON Point)' })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => LocationDto)
-  location?: LocationDto;
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch { return undefined; }
+    }
+    return value;
+  })
+  @IsObject()
+  location?: { type: string; coordinates: number[] };
 
   @ApiPropertyOptional({ description: 'Additional metadata' })
   @IsOptional()

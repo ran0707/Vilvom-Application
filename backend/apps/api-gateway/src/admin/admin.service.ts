@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '@app/database';
@@ -158,5 +158,19 @@ export class AdminService {
       users: users.map(u => u.toJSON()),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     };
+  }
+
+  async updateBookingStatus(id: string, status: string) {
+    const allowed = ['pending', 'confirmed', 'completed', 'cancelled'];
+    if (!allowed.includes(status)) {
+      throw new BadRequestException(`Invalid status. Allowed: ${allowed.join(', ')}`);
+    }
+    const booking = await this.droneModel.findByIdAndUpdate(
+      id,
+      { status, updatedAt: new Date() },
+      { new: true },
+    );
+    if (!booking) throw new NotFoundException('Booking not found');
+    return { message: `Booking marked as ${status}`, status };
   }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, Animated, Easing, Dimensions } from 'react-native';
+import { View, Text, ScrollView, FlatList, Animated, Easing, Dimensions } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import { WeatherCurrent, WeatherFullData } from '../types/interfaces';
 
@@ -13,7 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getItem } from '../utils/storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import NotificationService from '../services/notificationService';
+import {
+  sendWelcomeIfNeeded,
+  scheduleDailyMorningNotification,
+  checkAndSendWeatherAlert,
+  requestPermissionOnce,
+} from '../services/appNotificationService';
 
 import { useTranslation } from 'react-i18next';
 
@@ -30,6 +35,8 @@ import {
 
 import { WeatherSection } from '../components/HomeTabSections';
 import SuccessStories from '../components/SuccessStories';
+import FeedbackCard from '../components/FeedbackCard';
+import { getPublicFeedbacks, PublicFeedback } from '../services/feedbackApi';
 
 import styles from '../styles/HomeTabStyles';
 
@@ -47,6 +54,7 @@ const HomeTab = () => {
   const [fullWeatherData, setFullWeatherData] =
     useState<WeatherFullData | null>(null);
   const [upcomingTasks, setUpcomingTasks] = useState<SprayLogLocal[]>([]);
+  const [feedbacks, setFeedbacks] = useState<PublicFeedback[]>([]);
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null,
   );
@@ -210,6 +218,7 @@ const HomeTab = () => {
 
       setWeather(mappedCurrent);
       setFullWeatherData(fullData);
+      checkAndSendWeatherAlert(mappedCurrent).catch(() => {});
 
       // Generate weather-appropriate phrase
       const getRandomPhrase = (weather: WeatherCurrent): string => {
@@ -251,7 +260,7 @@ const HomeTab = () => {
     // Set a timeout to ensure we always show Coimbatore data if location takes too long
     const locationTimeout = setTimeout(() => {
       console.log('Location fetch timeout, using Coimbatore as fallback');
-      setCity('Using Coimbatore location...');
+      setCity(t('home.using_coimbatore') as string);
       fetchWeatherData(COIMBATORE_COORDS.lat, COIMBATORE_COORDS.lon);
     }, 10000); // 10 second timeout
 
@@ -262,7 +271,7 @@ const HomeTab = () => {
         // Use Coimbatore as fallback when permission is denied
         console.log('Location permission denied, using Coimbatore as fallback');
         clearTimeout(locationTimeout);
-        setCity('Using Coimbatore location...');
+        setCity(t('home.using_coimbatore') as string);
         await fetchWeatherData(COIMBATORE_COORDS.lat, COIMBATORE_COORDS.lon);
         return;
       }
@@ -282,7 +291,7 @@ const HomeTab = () => {
           clearTimeout(locationTimeout);
           // Use Coimbatore as fallback for any location error
           console.log('Location error occurred, using Coimbatore as fallback');
-          setCity('Using Coimbatore location...');
+          setCity(t('home.using_coimbatore') as string);
           fetchWeatherData(COIMBATORE_COORDS.lat, COIMBATORE_COORDS.lon);
         },
         {
@@ -375,14 +384,15 @@ const HomeTab = () => {
     // Always try to get location first, but ensure we have data
     fetchLocationAndWeather();
     loadUpcomingTasks();
-    // Always attempt to fetch user data (it handles authentication internally)
     fetchUserData();
+    getPublicFeedbacks(10).then(setFeedbacks).catch(() => {});
+    scheduleDailyMorningNotification().catch(() => {});
 
     // Fallback timer - if still loading after 15 seconds, force Coimbatore data
     const fallbackTimer = setTimeout(() => {
       if (loading && !weather) {
         console.log('Fallback timer triggered - showing Coimbatore data');
-        setCity('Showing Coimbatore weather...');
+        setCity(t('home.using_coimbatore') as string);
         fetchWeatherData(COIMBATORE_COORDS.lat, COIMBATORE_COORDS.lon);
       }
     }, 15000);
@@ -390,13 +400,12 @@ const HomeTab = () => {
     return () => clearTimeout(fallbackTimer);
   }, []);
 
-  // Send a test greeting notification when Home tab becomes focused
+  // Request permissions once and send welcome notification once
   useFocusEffect(
     React.useCallback(() => {
       let mounted = true;
       (async () => {
         try {
-          // Run permission orchestration only once per session
           if (!permissionsOrchestrated.current) {
             permissionsOrchestrated.current = true;
             try {
@@ -405,42 +414,12 @@ const HomeTab = () => {
             } catch (e) {
               console.warn('[HomeTab] location permission error', e);
             }
+            await requestPermissionOnce();
           }
-
-          const granted =
-            await NotificationService.requestNotificationPermission();
-          console.log('[HomeTab] notification permission:', granted);
-
-          const avail = await NotificationService.isAvailable();
-          console.log('[HomeTab] notification lib available:', avail);
-
           if (!mounted) return;
-
-          const welcomeSent = await NotificationService.hasWelcomeBeenSent();
-          console.log('[HomeTab] welcomeSent flag:', welcomeSent);
-          if (welcomeSent) return;
-
-          if (granted === false) {
-            console.log(
-              '[HomeTab] notifications permission denied, skipping greeting',
-            );
-            return;
-          }
-
-          const hour = new Date().getHours();
-          let greeting = t('home.greeting.day') as string;
-          if (hour < 12) greeting = t('home.greeting.morning') as string;
-          else if (hour < 17) greeting = t('home.greeting.afternoon') as string;
-          else greeting = t('home.greeting.evening') as string;
-
-          const name = user?.name ?? 'there';
-          console.log('[HomeTab] sending greeting notification now');
-          NotificationService.sendWelcomeNotification({
-            title: greeting,
-            message: `${greeting}, ${name}!`,
-          });
+          await sendWelcomeIfNeeded(user?.name ?? undefined);
         } catch (e) {
-          console.warn('[HomeTab] greeting notification failed', e);
+          console.warn('[HomeTab] notification setup failed', e);
         }
       })();
 
@@ -499,14 +478,14 @@ const HomeTab = () => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return { text: 'Good Morning',  icon: '🌅' };
-    if (hour < 17) return { text: 'Good Afternoon', icon: '☀️' };
-    return { text: 'Good Evening', icon: '🌙' };
+    if (hour < 12) return { text: t('home.greeting.morning') as string, icon: '🌅' };
+    if (hour < 17) return { text: t('home.greeting.afternoon') as string, icon: '☀️' };
+    return { text: t('home.greeting.evening') as string, icon: '🌙' };
   };
   const greeting = getGreeting();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* ── Greeting ───────────────────────────────────────── */}
         <View style={styles.greetingBlock}>
@@ -541,6 +520,24 @@ const HomeTab = () => {
           }
         />
 
+        {/* User Feedback Section */}
+        {feedbacks.length > 0 && (
+          <View style={feedbackStyles.section}>
+            <View style={feedbackStyles.headerRow}>
+              <Text style={feedbackStyles.heading}>What Our Users Say</Text>
+              <Text style={feedbackStyles.count}>{feedbacks.length} review{feedbacks.length !== 1 ? 's' : ''}</Text>
+            </View>
+            <FlatList
+              data={feedbacks}
+              horizontal
+              keyExtractor={(item) => item.id}
+              showsHorizontalScrollIndicator={false}
+              renderItem={({ item }) => <FeedbackCard item={item} />}
+              contentContainerStyle={feedbackStyles.listContent}
+            />
+          </View>
+        )}
+
         {/* Success stories component replaces the prior Tasks area */}
         <SuccessStories />
       </ScrollView>
@@ -570,5 +567,20 @@ const HomeTab = () => {
     </SafeAreaView>
   );
 };
+
+import { StyleSheet } from 'react-native';
+const feedbackStyles = StyleSheet.create({
+  section: { paddingTop: 20, paddingBottom: 8 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  heading: { fontSize: 17, fontWeight: '800', color: '#1B5E20' },
+  count: { fontSize: 12, color: '#888', fontWeight: '500' },
+  listContent: { paddingHorizontal: 16, paddingBottom: 4 },
+});
 
 export default HomeTab;

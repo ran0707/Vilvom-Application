@@ -9,6 +9,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getItem, setItem } from '../utils/storage';
 import { API_BASE_URL } from '../config/api';
+import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,6 +114,7 @@ async function apiDelete(path: string) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const SprayTab = () => {
+  const { t } = useTranslation();
   const [logs,         setLogs]         = useState<SprayLog[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [showModal,    setShowModal]    = useState(false);
@@ -328,12 +330,12 @@ const SprayTab = () => {
       {/* ── Page Header ──────────────────────────────────────────────────── */}
       <View style={s.pageHeader}>
         <View>
-          <Text style={s.pageTitle}>Spray Log</Text>
-          <Text style={s.pageSub}>Tea garden spray records</Text>
+          <Text style={s.pageTitle}>{t('spray.title')}</Text>
+          <Text style={s.pageSub}>{t('spray.page_sub')}</Text>
         </View>
         <TouchableOpacity style={s.addBtn} onPress={openAdd}>
           <MaterialCommunityIcons name="plus" size={20} color="#fff" />
-          <Text style={s.addBtnText}>Add Log</Text>
+          <Text style={s.addBtnText}>{t('spray.add_log_title')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -356,8 +358,8 @@ const SprayTab = () => {
         <View style={s.calBox}>
           {/* Day headers */}
           <View style={s.calHeadRow}>
-            {['S','M','T','W','T','F','S'].map((d, i) => (
-              <Text key={i} style={s.calHead}>{d}</Text>
+            {(t('spray.calendar_days', { returnObjects: true }) as string[]).map((d: string, i: number) => (
+              <Text key={i} style={s.calHead}>{d.charAt(0)}</Text>
             ))}
           </View>
           {rows.map((row, ri) => (
@@ -418,12 +420,13 @@ const SprayTab = () => {
         {logsForDate.length === 0 ? (
           <View style={s.emptyBox}>
             <MaterialCommunityIcons name="spray" size={38} color="#C8E6C9" />
-            <Text style={s.emptyTitle}>No logs yet</Text>
-            <Text style={s.emptySub}>Tap "Add Log" to record today's spray activity</Text>
+            <Text style={s.emptyTitle}>{t('spray.no_logs_yet')}</Text>
+            <Text style={s.emptySub}>{t('spray.empty_hint')}</Text>
           </View>
         ) : (
           logsForDate.map(log => {
             const sprayer = SPRAYER_OPTS.find(o => o.type === log.sprayerType)!;
+            const sprayerLabel = log.sprayerType === 'hand' ? t('spray.sprayer_hand') : log.sprayerType === 'machine' ? t('spray.sprayer_machine') : t('spray.sprayer_drone');
             const chems   = log.composition;
             return (
               <TouchableOpacity
@@ -445,7 +448,7 @@ const SprayTab = () => {
                     </View>
                     <View style={s.sprayerTag}>
                       <MaterialCommunityIcons name={sprayer.icon} size={14} color="#555" />
-                      <Text style={s.sprayerTagText}>{sprayer.label}</Text>
+                      <Text style={s.sprayerTagText}>{sprayerLabel}</Text>
                     </View>
                     <TouchableOpacity
                       style={[s.statusBtn, log.completed ? s.statusDone : s.statusPending]}
@@ -457,7 +460,7 @@ const SprayTab = () => {
                         color={log.completed ? '#4CAF50' : '#FF9800'}
                       />
                       <Text style={[s.statusText, { color: log.completed ? '#4CAF50' : '#FF9800' }]}>
-                        {log.completed ? 'Done' : 'Pending'}
+                        {log.completed ? t('spray.status_done') : t('spray.status_pending')}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -500,7 +503,7 @@ const SprayTab = () => {
 
               {/* Modal header */}
               <View style={s.modalHeader}>
-                <Text style={s.modalTitle}>{editing ? 'Edit Log' : 'New Spray Log'}</Text>
+                <Text style={s.modalTitle}>{editing ? t('spray.edit_log') : t('spray.add_log_title')}</Text>
                 <TouchableOpacity onPress={() => setShowModal(false)}>
                   <MaterialCommunityIcons name="close" size={24} color="#333" />
                 </TouchableOpacity>
@@ -535,6 +538,7 @@ const SprayTab = () => {
               <View style={s.sprayerRow}>
                 {SPRAYER_OPTS.map(opt => {
                   const active = sprayerType === opt.type;
+                  const label = opt.type === 'hand' ? t('spray.sprayer_hand') : opt.type === 'machine' ? t('spray.sprayer_machine') : t('spray.sprayer_drone');
                   return (
                     <TouchableOpacity
                       key={opt.type}
@@ -543,7 +547,7 @@ const SprayTab = () => {
                     >
                       <MaterialCommunityIcons name={opt.icon} size={22} color={active ? '#fff' : '#555'} />
                       <Text style={[s.sprayerChipText, active && s.sprayerChipTextActive]}>
-                        {opt.label}
+                        {label}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -626,11 +630,11 @@ const SprayTab = () => {
               {/* Buttons */}
               <View style={s.modalActions}>
                 <TouchableOpacity style={s.cancelBtn} onPress={() => setShowModal(false)}>
-                  <Text style={s.cancelBtnText}>Cancel</Text>
+                  <Text style={s.cancelBtnText}>{t('spray.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
                   <MaterialCommunityIcons name="content-save-outline" size={18} color="#fff" />
-                  <Text style={s.saveBtnText}>Save Log</Text>
+                  <Text style={s.saveBtnText}>{t('spray.save')}</Text>
                 </TouchableOpacity>
               </View>
 

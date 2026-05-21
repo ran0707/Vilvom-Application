@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useTranslation } from 'react-i18next';
 import { API_BASE_URL } from '../config/api';
 import { getItem } from '../utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -64,13 +65,14 @@ const SERVICES: Service[] = [
 ];
 
 const TIME_SLOTS = [
-  { id: 'before_11', label: 'Before 11 AM', icon: 'weather-sunset-up' },
-  { id: 'after_2',   label: 'After 2 PM',   icon: 'weather-sunny'     },
+  { id: 'before_11', icon: 'weather-sunset-up' },
+  { id: 'after_2',   icon: 'weather-sunny'     },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const DroneTab = () => {
+  const { t } = useTranslation();
   const [selectedService, setSelectedService] = useState<string>('');
   const [selectedSlot,    setSelectedSlot]    = useState<string>('');
   const [selectedDate,    setSelectedDate]    = useState<Date>(new Date());
@@ -162,14 +164,12 @@ const DroneTab = () => {
             /> */}
            <MaterialCommunityIcons name="quadcopter" size={44} color="#4CAF50" />
           </View>
-          <Text style={styles.heroTitle}>Drone Services</Text>
-          <Text style={styles.heroSub}>
-            Book certified drone operators for your tea plantation
-          </Text>
+          <Text style={styles.heroTitle}>{t('drone.hero_title')}</Text>
+          <Text style={styles.heroSub}>{t('drone.hero_sub')}</Text>
         </View>
 
         {/* ── Services ─────────────────────────────────────────────────────── */}
-        <Text style={styles.sectionLabel}>Choose a Service</Text>
+        <Text style={styles.sectionLabel}>{t('drone.choose_service')}</Text>
 
         {SERVICES.map(svc => {
           const active = selectedService === svc.id;
@@ -205,7 +205,7 @@ const DroneTab = () => {
         })}
 
         {/* ── Booking Form ──────────────────────────────────────────────────── */}
-        <Text style={[styles.sectionLabel, { marginTop: 24 }]}>Schedule Your Slot</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 24 }]}>{t('drone.schedule_slot')}</Text>
 
         {/* Date */}
         <TouchableOpacity style={styles.row} onPress={() => setShowCalendar(true)}>
@@ -213,7 +213,7 @@ const DroneTab = () => {
             <MaterialCommunityIcons name="calendar-month-outline" size={22} color="#4CAF50" />
           </View>
           <View style={styles.rowBody}>
-            <Text style={styles.rowLabel}>Date</Text>
+            <Text style={styles.rowLabel}>{t('drone.date_label')}</Text>
             <Text style={styles.rowValue}>
               {selectedDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
             </Text>
@@ -237,7 +237,7 @@ const DroneTab = () => {
                   color={active ? '#fff' : '#555'}
                 />
                 <Text style={[styles.slotText, active && styles.slotTextActive]}>
-                  {slot.label}
+                  {t(`drone.${slot.id}`)}
                 </Text>
               </TouchableOpacity>
             );
@@ -251,7 +251,7 @@ const DroneTab = () => {
           </View>
           <TextInput
             style={styles.input}
-            placeholder="Farm location / address"
+            placeholder={t('drone.location_ph') as string}
             placeholderTextColor="#aaa"
             value={location}
             onChangeText={setLocation}
@@ -265,7 +265,7 @@ const DroneTab = () => {
           </View>
           <TextInput
             style={styles.input}
-            placeholder="Area in acres (optional)"
+            placeholder={t('drone.area_ph') as string}
             placeholderTextColor="#aaa"
             value={areaSize}
             onChangeText={setAreaSize}
@@ -284,13 +284,13 @@ const DroneTab = () => {
             color="#4CAF50"
           />
           <Text style={styles.notesToggleText}>
-            {expandNotes ? 'Hide notes' : 'Add special notes (optional)'}
+            {expandNotes ? t('drone.notes_hide') : t('drone.notes_add')}
           </Text>
         </TouchableOpacity>
         {expandNotes && (
           <TextInput
             style={styles.notesInput}
-            placeholder="Describe any special requirements…"
+            placeholder={t('drone.notes_ph') as string}
             placeholderTextColor="#aaa"
             value={notes}
             onChangeText={setNotes}
@@ -310,7 +310,7 @@ const DroneTab = () => {
           ) : (
             <>
               <MaterialCommunityIcons name="send-circle-outline" size={20} color="#fff" />
-              <Text style={styles.bookBtnText}>Book Now</Text>
+              <Text style={styles.bookBtnText}>{t('drone.book_now')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -318,9 +318,7 @@ const DroneTab = () => {
         {/* Info */}
         <View style={styles.infoRow}>
           <MaterialCommunityIcons name="shield-check-outline" size={16} color="#888" />
-          <Text style={styles.infoText}>
-            All operators are certified. We confirm within 24 hours.
-          </Text>
+          <Text style={styles.infoText}>{t('drone.info_certified')}</Text>
         </View>
       </ScrollView>
 

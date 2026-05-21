@@ -14,7 +14,6 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +23,9 @@ import { detectPest } from '../services/pestDetectionApi';
 import GeminiService from '../services/geminiService';
 import { GEMINI_API_KEY } from '../config/gemini';
 import PestApi from '../services/pestApi';
+import { DEFAULT_HOST } from '../config/api';
 import { createPPCSystemPrompt } from '../utils/ppcGuidelines';
+import { getPPCDataForPest, PPC_VERSION } from '../utils/ppcPestData';
 
 // Function to parse and render markdown text with bold formatting
 // Returns a single Text parent so content flows inline; bold segments are nested Text elements.
@@ -60,6 +61,43 @@ const renderMarkdownText = (text: string) => {
 
 const { width, height } = Dimensions.get('window');
 
+const toArr = (val: any): string[] => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter(Boolean).map(String);
+  return [String(val)];
+};
+
+const groupByPest = (detections: any[]) => {
+  const map: Record<string, { pestName: string; count: number; lastDetected: string; severity: string }> = {};
+  for (const d of detections) {
+    const key = d.pestName || 'Unknown';
+    if (!map[key]) {
+      map[key] = { pestName: key, count: 0, lastDetected: d.createdAt, severity: d.severity || 'moderate' };
+    }
+    map[key].count++;
+    if (d.createdAt && new Date(d.createdAt) > new Date(map[key].lastDetected || 0)) {
+      map[key].lastDetected = d.createdAt;
+    }
+  }
+  return Object.values(map).sort((a, b) => b.count - a.count);
+};
+
+const getSeverityColor = (severity: string) => {
+  switch ((severity || '').toLowerCase()) {
+    case 'severe': case 'high': return '#D32F2F';
+    case 'moderate': return '#F57C00';
+    case 'mild': case 'low': return '#388E3C';
+    default: return '#F57C00';
+  }
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  try {
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  } catch { return ''; }
+};
+
 const PestResultScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -80,6 +118,7 @@ const PestResultScreen: React.FC = () => {
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const chatScrollRef = useRef<ScrollView | null>(null);
   const [questionnaire, setQuestionnaire] = useState<any>(null);
+  const [recommendationLevel, setRecommendationLevel] = useState<'standard' | 'escalated'>('standard');
   const [chatInitialized, setChatInitialized] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
@@ -221,6 +260,12 @@ const PestResultScreen: React.FC = () => {
     if (!rawImage) return null;
     if (typeof rawImage === 'string') {
       if (rawImage.startsWith('data:')) return rawImage;
+      if (rawImage.startsWith('http://') || rawImage.startsWith('https://')) return rawImage;
+      // Relative server path — build full URL
+      if (rawImage.startsWith('uploads/') || rawImage.startsWith('/uploads/')) {
+        return `${DEFAULT_HOST}/${rawImage.replace(/^\//, '')}`;
+      }
+      // Legacy base64 handling (no longer returned by server, kept for old records)
       const cleaned = rawImage.replace(/\s+/g, '');
       if (cleaned.length > 100 || cleaned.startsWith('/9j/'))
         return `data:image/jpeg;base64,${cleaned}`;
@@ -255,6 +300,7 @@ const PestResultScreen: React.FC = () => {
           // For historical data, don't show questionnaire info
           if (!params.isHistorical) {
             setQuestionnaire(params.questionnaire || null);
+            setRecommendationLevel(params.recommendationLevel || 'standard');
           }
           // Reset chat initialization for new results
           setChatInitialized(false);
@@ -306,15 +352,7 @@ const PestResultScreen: React.FC = () => {
 
       const params: any = getParams();
       const raw = result.processed_image;
-      let resolved = null;
-      if (raw && typeof raw === 'string') {
-        resolved = normalizeImageUri(raw);
-        if (!resolved) {
-          const cleaned = raw.replace(/\s+/g, '');
-          if (cleaned.length > 0)
-            resolved = `data:image/jpeg;base64,${cleaned}`;
-        }
-      }
+      let resolved = normalizeImageUri(raw);
       if (!resolved) resolved = params.imageUri || null;
       setImageUriResolved(resolved);
       setImageLoadError(false);
@@ -351,8 +389,8 @@ const PestResultScreen: React.FC = () => {
         try {
           if (result.meta && result.meta.savedToServer) return;
 
-          const lat = result.meta?.lat || result.lat || 0;
-          const lng = result.meta?.lng || result.lng || 0;
+          const lat = result.meta?.lat ?? result.lat ?? null;
+          const lng = result.meta?.lng ?? result.lng ?? null;
 
           // Transform questionnaire object → QuestionnaireDto[] expected by the DTO
           const questionnaireItems = questionnaire
@@ -372,49 +410,44 @@ const PestResultScreen: React.FC = () => {
                   question: 'First Time Upload',
                   answer: questionnaire.isFirstTimeUpload ? 'Yes' : 'No',
                 },
+                questionnaire.sectionName != null && {
+                  id: 'sectionName',
+                  question: 'Section Name',
+                  answer: String(questionnaire.sectionName),
+                },
               ].filter(Boolean)
             : undefined;
 
-          const payload: any = {
-            pestName: result.prediction || 'Unknown',
-            confidence: result.confidence || 0,
-            boundingBox: result.bounding_box || result.boundingBox || undefined,
-            symptoms: result.symptoms || [],
-            biological_control: result.biological_control || [],
-            chemical_control: result.chemical_control || [],
-            mechanical_control: result.mechanical_control || [],
-            location:
-              lat && lng
-                ? { type: 'Point', coordinates: [lng, lat] }
-                : undefined,
-            processed_image: null,
-            guestId: undefined,
-            meta: result.meta || {},
-            questionnaire:
-              questionnaireItems && questionnaireItems.length > 0
-                ? questionnaireItems
-                : undefined,
-            // chat: map text → message, add required id field, exclude system messages
-            chat: chatMessages
-              .filter(m => m.role !== 'system')
-              .map((m, i) => ({
-                id: `msg_${i}`,
-                role: m.role,
-                message: m.text,
-                timestamp: new Date().toISOString(),
-              })),
+          // Update the existing detection record (created during image scan) with
+          // location, questionnaire, and recommendation level via PATCH
+          const detectionId = result._id || result.id;
+          if (!detectionId) {
+            console.warn('No detection _id available — skipping metadata update');
+            setResult((r: any) => ({ ...(r || {}), meta: { ...((r && r.meta) || {}), savedToServer: true } }));
+            return;
+          }
+
+          const patchPayload: any = {
+            recommendationLevel,
+            sectionName: questionnaire?.sectionName,
           };
 
-          const saved = await PestApi.saveRecommendation(payload);
-          console.log('Initial recommendation saved:', saved);
+          if (lat != null && lng != null) {
+            patchPayload.location = { type: 'Point', coordinates: [Number(lng), Number(lat)] };
+          }
+
+          if (questionnaireItems && questionnaireItems.length > 0) {
+            patchPayload.questionnaire = questionnaireItems;
+          }
+
+          const patched = await PestApi.patchDetection(detectionId, patchPayload);
+          console.log('Detection updated with location+questionnaire:', patched);
           setResult((r: any) => ({
             ...(r || {}),
-            _id: saved.recommendation._id, // Make sure we have the ID for future updates
             meta: { ...((r && r.meta) || {}), savedToServer: true },
           }));
         } catch (e) {
-          console.error('Failed to save recommendation to server:', e);
-          // Still mark as saved to prevent repeated attempts, but log the error
+          console.error('Failed to update detection metadata:', e);
           setResult((r: any) => ({
             ...(r || {}),
             meta: { ...((r && r.meta) || {}), savedToServer: true },
@@ -425,13 +458,13 @@ const PestResultScreen: React.FC = () => {
       // Fetch nearby aggregated data for this location (if available)
       (async () => {
         try {
-          const lat = result.meta?.lat || result.lat || null;
-          const lng = result.meta?.lng || result.lng || null;
-          if (lat && lng) {
+          const lat = result.meta?.lat ?? result.lat ?? null;
+          const lng = result.meta?.lng ?? result.lng ?? null;
+          if (lat != null && lng != null) {
             const nearby = await PestApi.getNearbyRecommendations(
               Number(lat),
               Number(lng),
-              5000,
+              5, // 5km radius; backend multiplies by 1000
             );
             // attach to result meta so UI can show it
             setResult((r: any) => ({ ...(r || {}), nearby }));
@@ -553,7 +586,7 @@ const PestResultScreen: React.FC = () => {
               timestamp: new Date().toISOString(),
             },
           ];
-          const updateResult = await PestApi.updateRecommendation(result._id, {
+          const updateResult = await PestApi.patchDetection(result._id, {
             chat: updatedChat,
           });
           console.log('Chat update successful:', updateResult);
@@ -670,139 +703,268 @@ const PestResultScreen: React.FC = () => {
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Result Card - this will scroll away as chat grows */}
+          {/* ── Result Card ── */}
           {result && (
             <View style={styles.resultCard}>
-              {/* Header with image and title - Made bigger */}
-              <View style={styles.resultHeaderLarge}>
-                <TouchableOpacity onPress={() => setImageModalVisible(true)}>
-                  {imageUriResolved ? (
-                    <Image
-                      source={{ uri: imageUriResolved }}
-                      style={styles.resultImageLarge}
-                    />
-                  ) : (
-                    <View style={styles.resultImagePlaceholderLarge}>
-                      <Icon name="eco" size={32} color="#666" />
-                    </View>
-                  )}
-                </TouchableOpacity>
-                <View style={styles.resultTitleContainerLarge}>
-                  <Text style={styles.resultTitleLarge}>
-                    {result.prediction || 'Unknown'}
-                  </Text>
-                  {result.plant && (
-                    <Text style={styles.resultSubtitleLarge}>
-                      {result.plant}
-                    </Text>
-                  )}
-                  {questionnaire && (
-                    <View style={styles.questionnaireInfo}>
-                      <Text style={styles.questionnaireText}>
-                        {questionnaire.acreSize} Hectacer •{' '}
-                        {questionnaire.lastPesticideUse}
-                      </Text>
-                      <Text style={styles.uploadTypeText}>
-                        {questionnaire.isFirstTimeUpload
-                          ? 'First Time Upload'
-                          : 'Rechecking'}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
 
-              {/* Description */}
-              <Text style={styles.resultDescription}>
-                {result.prediction} on {result.plant || 'Plant'}
-              </Text>
-              <Text style={styles.resultDetails}>
-                {result.symptoms && Array.isArray(result.symptoms)
-                  ? result.symptoms.slice(0, 2).join('. ') + '.'
-                  : result.symptoms ||
-                    'Detailed analysis of the detected pest affecting various plant parts.'}
-              </Text>
-
-              {/* Treatment and Prevention - show only API-provided controls/recommendations */}
-              <Text style={styles.sectionTitle}>Treatment and Prevention</Text>
-
-              {/* Chemical control (from model) */}
-              {result.chemical_control && (
-                <View style={styles.treatmentItem}>
-                  <Text style={styles.treatmentTitle}>• Chemical control:</Text>
-                  <Text style={styles.treatmentText}>
-                    {Array.isArray(result.chemical_control)
-                      ? result.chemical_control.join(', ')
-                      : String(result.chemical_control)}
-                  </Text>
-                </View>
-              )}
-
-              {/* Biological control (from model) */}
-              {result.biological_control && (
-                <View style={styles.treatmentItem}>
-                  <Text style={styles.treatmentTitle}>
-                    • Biological control:
-                  </Text>
-                  <Text style={styles.treatmentText}>
-                    {Array.isArray(result.biological_control)
-                      ? result.biological_control.join(', ')
-                      : String(result.biological_control)}
-                  </Text>
-                </View>
-              )}
-
-              {/* Mechanical control (from model) */}
-              {result.mechanical_control && (
-                <View style={styles.treatmentItem}>
-                  <Text style={styles.treatmentTitle}>
-                    • Mechanical control:
-                  </Text>
-                  <Text style={styles.treatmentText}>
-                    {Array.isArray(result.mechanical_control)
-                      ? result.mechanical_control.join(', ')
-                      : String(result.mechanical_control)}
-                  </Text>
-                </View>
-              )}
-
-              {/* Any free-text recommendations returned by the model */}
-              {result.recommendations && (
-                <View style={styles.treatmentItem}>
-                  <Text style={styles.treatmentTitle}>• Recommendations:</Text>
-                  <Text style={styles.treatmentText}>
-                    {typeof result.recommendations === 'string'
-                      ? result.recommendations
-                      : Array.isArray(result.recommendations)
-                      ? result.recommendations.join('\n')
-                      : JSON.stringify(result.recommendations)}
-                  </Text>
-                </View>
-              )}
-
-              {/* Fallback when no control fields returned by model */}
-              {!result.chemical_control &&
-                !result.biological_control &&
-                !result.mechanical_control &&
-                !result.recommendations && (
-                  <View style={styles.treatmentItem}>
-                    <Text style={styles.treatmentText}>
-                      No control recommendations were provided by the model.
-                    </Text>
+              {/* 1 ── Detection Image Card */}
+              <TouchableOpacity
+                style={styles.detectionImageCard}
+                onPress={() => setImageModalVisible(true)}
+                activeOpacity={0.92}
+              >
+                {imageUriResolved ? (
+                  <Image
+                    source={{ uri: imageUriResolved }}
+                    style={styles.detectionImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.detectionImagePlaceholder}>
+                    <Icon name="eco" size={48} color="#A5D6A7" />
+                    <Text style={styles.detectionImagePlaceholderText}>No image</Text>
                   </View>
                 )}
+                {/* Gradient overlay row at bottom */}
+                <View style={styles.detectionOverlay}>
+                  <View style={styles.detectionOverlayLeft}>
+                    <Text style={styles.detectionPestName} numberOfLines={1}>
+                      {result.prediction || 'Unknown Pest'}
+                    </Text>
+                    {result.plant ? (
+                      <Text style={styles.detectionPlant}>{result.plant}</Text>
+                    ) : null}
+                    {questionnaire?.sectionName ? (
+                      <Text style={styles.detectionSection}>
+                        Section: {questionnaire.sectionName}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.detectionOverlayRight}>
+                    {result.confidence ? (
+                      <View style={styles.confidenceBadge}>
+                        <Text style={styles.confidenceText}>
+                          {Math.round(result.confidence * 100)}%
+                        </Text>
+                        <Text style={styles.confidenceLabel}>match</Text>
+                      </View>
+                    ) : null}
+                    <View style={[
+                      styles.levelBadge,
+                      recommendationLevel === 'escalated' ? styles.levelBadgeWarn : styles.levelBadgeGood,
+                    ]}>
+                      <Text style={styles.levelBadgeText}>
+                        {recommendationLevel === 'escalated' ? '⚠ Escalated' : '✓ Standard'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                {imageUriResolved && (
+                  <View style={styles.tapToExpandHint}>
+                    <Icon name="zoom-out-map" size={14} color="rgba(255,255,255,0.8)" />
+                    <Text style={styles.tapToExpandText}>Tap to expand</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
 
-              {/* Nearby Region Card */}
-              <View style={styles.nearbyRegionCard}>
-                <Text style={styles.nearbyRegionTitle}>
-                  🗺️ Regional Pest Alert
-                </Text>
-                <Text style={styles.nearbyRegionText}>
-                  This pest has been reported in your nearby 5km region. Stay
-                  vigilant and monitor your plantation regularly. Consider
-                  implementing preventive measures to protect your crops.
-                </Text>
-              </View>
+              {/* Questionnaire meta row */}
+              {questionnaire && (
+                <View style={styles.metaRow}>
+                  <View style={styles.metaChip}>
+                    <Icon name="crop" size={12} color="#2E7D32" />
+                    <Text style={styles.metaChipText}>{questionnaire.acreSize} ac</Text>
+                  </View>
+                  <View style={styles.metaChip}>
+                    <Icon name="schedule" size={12} color="#2E7D32" />
+                    <Text style={styles.metaChipText}>{questionnaire.lastPesticideUse}</Text>
+                  </View>
+                </View>
+              )}
+
+              {/* 2 ── Regional Pest Alert */}
+              {(() => {
+                const lat = result.meta?.lat || result.lat;
+                const lng = result.meta?.lng || result.lng;
+                const nearby = result.nearby;
+                const detections: any[] = nearby?.nearbyDetections || [];
+                const grouped = groupByPest(detections);
+                const hasLocation = !!(lat && lng);
+                return (
+                  <View style={styles.regionalAlertCard}>
+                    <View style={styles.regionalAlertHeader}>
+                      <Icon name="location-on" size={18} color="#B71C1C" />
+                      <Text style={styles.regionalAlertTitle}>Regional Pest Alert</Text>
+                      <View style={styles.regionalAlertBadge}>
+                        <Text style={styles.regionalAlertBadgeText}>5 km · 30 days</Text>
+                      </View>
+                    </View>
+                    {!hasLocation && (
+                      <View style={styles.regionalNoLocRow}>
+                        <Icon name="location-off" size={16} color="#9E9E9E" />
+                        <Text style={styles.regionalNoLocText}>
+                          Location not captured — enable location permission for area alerts
+                        </Text>
+                      </View>
+                    )}
+                    {hasLocation && !nearby && (
+                      <View style={styles.regionalLoading}>
+                        <ActivityIndicator size="small" color="#F57C00" />
+                        <Text style={styles.regionalLoadingText}>Checking nearby reports…</Text>
+                      </View>
+                    )}
+                    {hasLocation && nearby && detections.length === 0 && (
+                      <View style={styles.regionalNoCases}>
+                        <Icon name="check-circle" size={18} color="#388E3C" />
+                        <Text style={styles.regionalNoCasesText}>
+                          No outbreaks reported in your 5 km area in the last 30 days.
+                        </Text>
+                      </View>
+                    )}
+                    {hasLocation && nearby && detections.length > 0 && (
+                      <>
+                        <Text style={styles.regionalSubtitle}>
+                          {detections.length} detection{detections.length > 1 ? 's' : ''} reported nearby
+                        </Text>
+                        {grouped.map((item, i) => (
+                          <View key={i} style={[styles.regionalPestRow, i === grouped.length - 1 && { borderBottomWidth: 0 }]}>
+                            <View style={[styles.regionalSeverityDot, { backgroundColor: getSeverityColor(item.severity) }]} />
+                            <View style={styles.regionalPestInfo}>
+                              <Text style={styles.regionalPestName}>{item.pestName}</Text>
+                              <Text style={styles.regionalPestMeta}>
+                                {item.count} report{item.count > 1 ? 's' : ''}
+                                {item.lastDetected ? ` · Last: ${formatDate(item.lastDetected)}` : ''}
+                              </Text>
+                            </View>
+                            <View style={[styles.regionalCountBadge, { backgroundColor: getSeverityColor(item.severity) + '22' }]}>
+                              <Text style={[styles.regionalCountText, { color: getSeverityColor(item.severity) }]}>{item.count}</Text>
+                            </View>
+                          </View>
+                        ))}
+                        <Text style={styles.regionalWarning}>
+                          Stay vigilant — monitor your plantation regularly.
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                );
+              })()}
+
+              {/* 3 ── Symptoms */}
+              {result.symptoms && Array.isArray(result.symptoms) && result.symptoms.length > 0 && (
+                <View style={styles.symptomsCard}>
+                  <Text style={styles.symptomsTitle}>Observed Symptoms</Text>
+                  {result.symptoms.slice(0, 3).map((s: string, i: number) => (
+                    <View key={i} style={styles.symptomRow}>
+                      <View style={styles.symptomDot} />
+                      <Text style={styles.symptomText}>{s}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* ── Treatment & Prevention (PPC-based) ── */}
+              {(() => {
+                const ppc = getPPCDataForPest(result.prediction || '');
+                // Prefer PPC data; fall back to model output if no PPC match
+                const chemical  = ppc ? ppc.chemical.map(c => c.dose ? `${c.method} @ ${c.dose}${c.mrl ? ` (MRL: ${c.mrl})` : ''}` : c.method) : toArr(result.chemical_control);
+                const biological = ppc ? ppc.biological.map(b => b.dose ? `${b.method} @ ${b.dose}` : b.method) : toArr(result.biological_control);
+                const mechanical = ppc ? ppc.mechanical.map(m => m.method) : toArr(result.mechanical_control);
+                const ipmNote   = ppc?.ipmNote;
+
+                return (
+                  <>
+                    <View style={styles.treatmentHeader}>
+                      <Text style={styles.sectionTitle}>Treatment {'&'} Prevention</Text>
+                      <View style={styles.ppcBadge}>
+                        <Text style={styles.ppcBadgeText}>PPC Ver. 17.0</Text>
+                      </View>
+                    </View>
+
+                    {/* Chemical Control */}
+                    <View style={[styles.controlCard, styles.controlCardChemical]}>
+                      <View style={styles.controlCardHeader}>
+                        <View style={[styles.controlIcon, styles.controlIconChemical]}>
+                          <Icon name="science" size={14} color="#fff" />
+                        </View>
+                        <Text style={[styles.controlCardTitle, styles.controlCardTitleChemical]}>Chemical Control</Text>
+                      </View>
+                      {chemical.length > 0 ? chemical.map((item, i) => (
+                        <View key={i} style={styles.controlItem}>
+                          <View style={[styles.controlDot, styles.controlDotChemical]} />
+                          <Text style={styles.controlItemText}>{item}</Text>
+                        </View>
+                      )) : <Text style={styles.controlEmpty}>No chemical control data available</Text>}
+                    </View>
+
+                    {/* Biological Control */}
+                    <View style={[styles.controlCard, styles.controlCardBio]}>
+                      <View style={styles.controlCardHeader}>
+                        <View style={[styles.controlIcon, styles.controlIconBio]}>
+                          <Icon name="eco" size={14} color="#fff" />
+                        </View>
+                        <Text style={[styles.controlCardTitle, styles.controlCardTitleBio]}>Biological Control</Text>
+                      </View>
+                      {biological.length > 0 ? biological.map((item, i) => (
+                        <View key={i} style={styles.controlItem}>
+                          <View style={[styles.controlDot, styles.controlDotBio]} />
+                          <Text style={styles.controlItemText}>{item}</Text>
+                        </View>
+                      )) : <Text style={styles.controlEmpty}>No biological control data available</Text>}
+                    </View>
+
+                    {/* Mechanical Control */}
+                    <View style={[styles.controlCard, styles.controlCardMech]}>
+                      <View style={styles.controlCardHeader}>
+                        <View style={[styles.controlIcon, styles.controlIconMech]}>
+                          <Icon name="handyman" size={14} color="#fff" />
+                        </View>
+                        <Text style={[styles.controlCardTitle, styles.controlCardTitleMech]}>Mechanical Control</Text>
+                      </View>
+                      {mechanical.length > 0 ? mechanical.map((item, i) => (
+                        <View key={i} style={styles.controlItem}>
+                          <View style={[styles.controlDot, styles.controlDotMech]} />
+                          <Text style={styles.controlItemText}>{item}</Text>
+                        </View>
+                      )) : <Text style={styles.controlEmpty}>No mechanical control data available</Text>}
+                    </View>
+
+                    {/* IPM Note */}
+                    <View style={styles.ipmNote}>
+                      <Icon name="info" size={14} color="#2E7D32" />
+                      <Text style={styles.ipmNoteText}>
+                        {ipmNote || 'Use PPFs only as a component of IPM. Prioritize biological and cultural methods. Apply chemicals only when ETL is crossed.'}
+                        {' '}Source: {PPC_VERSION}.
+                      </Text>
+                    </View>
+                  </>
+                );
+              })()}
+
+              {/* Escalated advisory card */}
+              {recommendationLevel === 'escalated' && (
+                <View style={styles.escalatedCard}>
+                  <View style={styles.escalatedHeader}>
+                    <Icon name="warning" size={20} color="#E65100" />
+                    <Text style={styles.escalatedTitle}>Escalated Treatment Required</Text>
+                  </View>
+                  <Text style={styles.escalatedBody}>
+                    Since this pest was not controlled after the previous treatment,
+                    a higher dose plan is recommended below. Please also consider
+                    contacting a plant protection advisor for on-site guidance.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.advisoryBtn}
+                    onPress={() => Alert.alert(
+                      'Plant Protection Advisory',
+                      'Contact your regional Plant Protection Officer (PPO) or\ncall the Krishi Vigyan Kendra helpline:\n\n📞 1800-180-1551 (Toll Free)\n\nThey will guide you on escalated chemical doses and safe application schedules.',
+                      [{ text: 'OK' }],
+                    )}
+                  >
+                    <Icon name="phone" size={18} color="#fff" />
+                    <Text style={styles.advisoryBtnText}>Connect with Advisory</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           )}
 
@@ -1470,8 +1632,51 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
   },
+  uploadTypeEscalated: {
+    color: '#E65100',
+  },
+  escalatedCard: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 4,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#E65100',
+  },
+  escalatedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  escalatedTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#E65100',
+  },
+  escalatedBody: {
+    fontSize: 13,
+    color: '#5D4037',
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  advisoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#E65100',
+    paddingVertical: 11,
+    borderRadius: 10,
+  },
+  advisoryBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 
-  // Nearby region card
+  // Nearby region card (legacy — kept for safety)
   nearbyRegionCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -1479,23 +1684,297 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderLeftWidth: 4,
     borderLeftColor: '#FF9800',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  nearbyRegionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+  nearbyRegionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
+  nearbyRegionText:  { fontSize: 14, color: '#666', lineHeight: 20 },
+
+  // ── Treatment section ──
+  treatmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  ppcBadge: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  ppcBadgeText: { fontSize: 10, color: '#2E7D32', fontWeight: '700' },
+
+  controlCard: {
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+  },
+  controlCardChemical: { backgroundColor: '#FFF8E1', borderLeftColor: '#F57C00' },
+  controlCardBio:      { backgroundColor: '#E8F5E9', borderLeftColor: '#2E7D32' },
+  controlCardMech:     { backgroundColor: '#E3F2FD', borderLeftColor: '#1976D2' },
+
+  controlCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+  controlIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  controlIconChemical: { backgroundColor: '#F57C00' },
+  controlIconBio:      { backgroundColor: '#2E7D32' },
+  controlIconMech:     { backgroundColor: '#1976D2' },
+
+  controlCardTitle:         { fontSize: 14, fontWeight: '700' },
+  controlCardTitleChemical: { color: '#E65100' },
+  controlCardTitleBio:      { color: '#1B5E20' },
+  controlCardTitleMech:     { color: '#0D47A1' },
+
+  controlItem: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6, gap: 8 },
+  controlDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7, flexShrink: 0 },
+  controlDotChemical: { backgroundColor: '#F57C00' },
+  controlDotBio:      { backgroundColor: '#2E7D32' },
+  controlDotMech:     { backgroundColor: '#1976D2' },
+  controlItemText: { flex: 1, fontSize: 13, color: '#444', lineHeight: 19 },
+  controlEmpty:    { fontSize: 13, color: '#999', fontStyle: 'italic' },
+
+  ipmNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: '#F1FAF1',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 14,
+  },
+  ipmNoteText: { flex: 1, fontSize: 11, color: '#2E7D32', lineHeight: 16 },
+
+  // ── Regional Pest Alert ──
+  regionalAlertCard: {
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 8,
+    backgroundColor: '#FFFDE7',
+    borderWidth: 1,
+    borderColor: '#FFC107',
   },
-  nearbyRegionText: {
+  regionalAlertHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  regionalAlertTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: '#B71C1C' },
+  regionalAlertBadge: {
+    backgroundColor: '#FFECB3',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#FFC107',
+  },
+  regionalAlertBadgeText: { fontSize: 10, color: '#E65100', fontWeight: '600' },
+
+  regionalLoading: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+  regionalLoadingText: { fontSize: 13, color: '#888' },
+
+  regionalNoCases: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 2 },
+  regionalNoCasesText: { flex: 1, fontSize: 13, color: '#388E3C', lineHeight: 19 },
+
+  regionalNoLocRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  regionalNoLocText: { flex: 1, fontSize: 13, color: '#9E9E9E', lineHeight: 18 },
+
+  regionalSubtitle: { fontSize: 12, color: '#888', marginBottom: 8, fontStyle: 'italic' },
+
+  regionalPestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  regionalSeverityDot: { width: 10, height: 10, borderRadius: 5, flexShrink: 0 },
+  regionalPestInfo: { flex: 1 },
+  regionalPestName: { fontSize: 13, fontWeight: '700', color: '#333' },
+  regionalPestMeta: { fontSize: 11, color: '#888', marginTop: 2 },
+  regionalCountBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  regionalCountText: { fontSize: 12, fontWeight: '700' },
+  regionalWarning: { fontSize: 12, color: '#F57C00', marginTop: 10, lineHeight: 17 },
+
+  // ── Detection Image Card ──
+  detectionImageCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 12,
+    backgroundColor: '#E8F5E9',
+    minHeight: 220,
+  },
+  detectionImage: {
+    width: '100%',
+    height: 220,
+  },
+  detectionImagePlaceholder: {
+    height: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  detectionImagePlaceholderText: {
+    fontSize: 13,
+    color: '#A5D6A7',
+  },
+  detectionOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  detectionOverlayLeft: {
+    flex: 1,
+    marginRight: 10,
+  },
+  detectionPestName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  detectionPlant: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  detectionSection: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
+  },
+  detectionOverlayRight: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  confidenceBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  confidenceText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  confidenceLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  levelBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  levelBadgeGood: {
+    backgroundColor: 'rgba(76,175,80,0.85)',
+  },
+  levelBadgeWarn: {
+    backgroundColor: 'rgba(230,81,0,0.85)',
+  },
+  levelBadgeText: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  tapToExpandHint: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  tapToExpandText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+  },
+
+  // ── Meta chips ──
+  metaRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  metaChipText: {
+    fontSize: 12,
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+
+  // ── Symptoms ──
+  symptomsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  symptomsTitle: {
     fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 10,
   },
+  symptomRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 6,
+  },
+  symptomDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4CAF50',
+    marginTop: 7,
+    flexShrink: 0,
+  },
+  symptomText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 19,
+  },
+
   // Suggestions styles
   suggestionsContainer: {
     paddingHorizontal: 16,

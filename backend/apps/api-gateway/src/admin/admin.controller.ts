@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
@@ -28,6 +28,15 @@ export class AdminController {
       limit ? parseInt(limit) : 20,
       status,
     );
+  }
+
+  @Patch('drone-bookings/:id/status')
+  @ApiOperation({ summary: 'Update drone booking status (admin)' })
+  updateBookingStatus(
+    @Param('id')     id:     string,
+    @Body('status')  status: string,
+  ) {
+    return this.adminService.updateBookingStatus(id, status);
   }
 
   @Get('users')
