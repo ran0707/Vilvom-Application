@@ -9,14 +9,16 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
-  Image,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Geolocation from '@react-native-community/geolocation';
 import { useTranslation } from 'react-i18next';
 import { API_BASE_URL } from '../config/api';
-import { getItem } from '../utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -73,15 +75,78 @@ const TIME_SLOTS = [
 
 const DroneTab = () => {
   const { t } = useTranslation();
-  const [selectedService, setSelectedService] = useState<string>('');
-  const [selectedSlot,    setSelectedSlot]    = useState<string>('');
-  const [selectedDate,    setSelectedDate]    = useState<Date>(new Date());
-  const [location,        setLocation]        = useState('');
-  const [areaSize,        setAreaSize]        = useState('');
-  const [notes,           setNotes]           = useState('');
-  const [loading,         setLoading]         = useState(false);
-  const [showCalendar,    setShowCalendar]    = useState(false);
-  const [expandNotes,     setExpandNotes]     = useState(false);
+  const [selectedService,  setSelectedService]  = useState<string>('');
+  const [selectedSlot,     setSelectedSlot]     = useState<string>('');
+  const [selectedDate,     setSelectedDate]     = useState<Date>(new Date());
+  const [location,         setLocation]         = useState('');
+  const [coordinates,      setCoordinates]      = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLoading,  setLocationLoading]  = useState(false);
+  const [areaSize,         setAreaSize]         = useState('');
+  const [notes,            setNotes]            = useState('');
+  const [loading,          setLoading]          = useState(false);
+  const [showCalendar,     setShowCalendar]     = useState(false);
+  const [expandNotes,      setExpandNotes]      = useState(false);
+
+  // ── GPS location fetch ────────────────────────────────────────────────────────
+  const fetchUserLocation = async () => {
+    if (locationLoading) return;
+    setLocationLoading(true);
+
+    const requestPermission = async (): Promise<boolean> => {
+      if (Platform.OS !== 'android') return true;
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          title: 'Farm Location Access',
+          message: 'We need your location to auto-fill your farm address.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Cancel',
+        },
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    };
+
+    try {
+      const allowed = await requestPermission();
+      if (!allowed) {
+        Alert.alert('Permission Denied', 'Enable location permission in Settings to use this feature.');
+        return;
+      }
+
+      Geolocation.getCurrentPosition(
+        async pos => {
+          const { latitude, longitude } = pos.coords;
+          setCoordinates({ lat: latitude, lng: longitude });
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+              { headers: { 'User-Agent': 'VilvomApp/1.0' } },
+            );
+            const data = await res.json();
+            const a = data.address ?? {};
+            const parts = [
+              a.village || a.hamlet || a.suburb || a.town || a.city_district,
+              a.county  || a.state_district,
+              a.state,
+            ].filter(Boolean);
+            setLocation(parts.join(', ') || data.display_name || '');
+          } catch {
+            setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          } finally {
+            setLocationLoading(false);
+          }
+        },
+        err => {
+          setLocationLoading(false);
+          Alert.alert('Location Error', err.message || 'Could not get your location. Try again.');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+      );
+    } catch {
+      setLocationLoading(false);
+      Alert.alert('Error', 'Failed to access location services.');
+    }
+  };
 
   // ── Calendar (manual grid, no extra lib required) ──────────────────────────
   const calendarDates = (() => {
@@ -122,6 +187,7 @@ const DroneTab = () => {
             location,
             areaSize: areaSize ? parseFloat(areaSize) : null,
             areaUnit: 'acres',
+            ...(coordinates && { coordinates }),
           },
           additionalNotes: notes,
         }),
@@ -143,6 +209,7 @@ const DroneTab = () => {
     setSelectedSlot('');
     setSelectedDate(new Date());
     setLocation('');
+    setCoordinates(null);
     setAreaSize('');
     setNotes('');
   };
@@ -244,19 +311,40 @@ const DroneTab = () => {
           })}
         </View>
 
-        {/* Location */}
+        {/* Location — GPS auto-detect + editable */}
         <View style={styles.inputRow}>
           <View style={styles.rowIcon}>
             <MaterialCommunityIcons name="map-marker-outline" size={22} color="#4CAF50" />
           </View>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { flex: 1 }]}
             placeholder={t('drone.location_ph') as string}
             placeholderTextColor="#aaa"
             value={location}
-            onChangeText={setLocation}
+            onChangeText={text => { setLocation(text); if (!text) setCoordinates(null); }}
           />
+          <TouchableOpacity
+            onPress={fetchUserLocation}
+            disabled={locationLoading}
+            style={styles.gpsBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            {locationLoading ? (
+              <ActivityIndicator size="small" color="#4CAF50" />
+            ) : (
+              <MaterialCommunityIcons
+                name={coordinates ? 'crosshairs-gps' : 'crosshairs'}
+                size={22}
+                color={coordinates ? '#4CAF50' : '#aaa'}
+              />
+            )}
+          </TouchableOpacity>
         </View>
+        {coordinates && (
+          <Text style={styles.coordsHint}>
+            GPS: {coordinates.lat.toFixed(5)}, {coordinates.lng.toFixed(5)}
+          </Text>
+        )}
 
         {/* Area */}
         <View style={styles.inputRow}>
@@ -519,6 +607,20 @@ const styles = StyleSheet.create({
     color: '#222',
     paddingVertical: 12,
     marginLeft: 10,
+  },
+  gpsBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  coordsHint: {
+    fontSize: 11,
+    color: '#4CAF50',
+    marginTop: -6,
+    marginBottom: 8,
+    marginLeft: 52,
   },
 
   // Notes

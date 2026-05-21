@@ -45,6 +45,10 @@ export class DroneRequest {
       location: { type: String, required: true },
       areaSize: Number,
       areaUnit: { type: String, default: 'acres' },
+      coordinates: {
+        lat: Number,
+        lng: Number,
+      },
     },
     required: true,
   })
@@ -53,6 +57,7 @@ export class DroneRequest {
     location: string;
     areaSize?: number;
     areaUnit: string;
+    coordinates?: { lat: number; lng: number };
   };
 
   @Prop()

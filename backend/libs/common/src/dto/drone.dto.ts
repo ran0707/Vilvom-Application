@@ -5,11 +5,18 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+class CoordinatesDto {
+  @ApiProperty()  @IsNumber() lat: number;
+  @ApiProperty()  @IsNumber() lng: number;
+}
+
 class AreaDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() farmName?: string;
-  @ApiProperty()         @IsString()              location: string;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() areaSize?: number;
-  @ApiPropertyOptional() @IsOptional() @IsString() areaUnit?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString()              farmName?: string;
+  @ApiProperty()         @IsString()                            location: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber()              areaSize?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString()              areaUnit?: string;
+  @ApiPropertyOptional() @IsOptional() @ValidateNested()
+  @Type(() => CoordinatesDto)                                   coordinates?: CoordinatesDto;
 }
 
 export class CreateDroneRequestDto {
