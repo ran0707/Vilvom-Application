@@ -1,9 +1,42 @@
 import { getItem, setItem } from '../utils/storage';
+import { Platform, PermissionsAndroid } from 'react-native';
 
 let PushNotification: any = null;
 try {
   PushNotification = require('react-native-push-notification');
 } catch (e) {}
+
+let configured = false;
+function ensureConfigured() {
+  if (configured || !PushNotification) return;
+  try {
+    PushNotification.configure({
+      onRegister: () => {},
+      onNotification: () => {},
+      popInitialNotification: true,
+      requestPermissions: false,
+    });
+    configured = true;
+  } catch (e) {}
+}
+
+async function ensureNotificationPermission(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    // POST_NOTIFICATIONS required on Android 13+ (API 33+)
+    const perm = (PermissionsAndroid.PERMISSIONS as any).POST_NOTIFICATIONS;
+    if (!perm) return; // below Android 13 — no runtime permission needed
+    const status = await PermissionsAndroid.check(perm);
+    if (!status) {
+      await PermissionsAndroid.request(perm, {
+        title: 'Notification Permission',
+        message: 'Allow Vilvom to send you OTP notifications.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      });
+    }
+  } catch (e) {}
+}
 
 const CHANNEL_ID = 'camellia-default-channel';
 
@@ -202,11 +235,12 @@ function ensureOtpChannel() {
   } catch (e) {}
 }
 
-export function sendOtpNotification(otp: string, phone: string): void {
+export async function sendOtpNotification(otp: string, phone: string): Promise<void> {
   if (!PushNotification) return;
   try {
+    ensureConfigured();
+    await ensureNotificationPermission();
     ensureOtpChannel();
-    // Format OTP with spaces so it's easy to read: "1 2 3 4 5 6"
     const spaced = otp.split('').join(' ');
     PushNotification.localNotification({
       channelId: OTP_CHANNEL_ID,
