@@ -304,12 +304,10 @@ export class PestService {
     }
 
     if (body.recommendationLevel) {
-      if (!update.meta) update.meta = {};
       update['meta.recommendationLevel'] = body.recommendationLevel;
     }
 
     if (body.sectionName) {
-      if (!update.meta) update.meta = {};
       update['meta.sectionName'] = body.sectionName;
     }
 

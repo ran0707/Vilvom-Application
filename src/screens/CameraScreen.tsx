@@ -121,31 +121,40 @@ const CameraScreen = () => {
     }
   };
 
-  const requestGalleryPermission = async () => {
+const requestGalleryPermission = async () => {
     if (Platform.OS === 'android') {
       try {
         const sdk = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10);
-        const permission = sdk >= 33
-          ? ('android.permission.READ_MEDIA_IMAGES' as any)
-          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-        const granted = await PermissionsAndroid.request(permission, {
-          title: 'Gallery Permission',
-          message: 'Gallery access is needed to select photos for pest detection.',
-          buttonPositive: 'Allow',
-          buttonNegative: 'Deny',
-        });
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        
+        if (sdk >= 33) {
+          // Android 13+ does not require broad storage permissions to use launchImageLibrary.
+          // It safely opens the native system Photo Picker automatically.
           openGallery();
-        } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-          Alert.alert('Gallery Permission', 'Enable Storage permission in your device settings.', [
-            { text: 'Open Settings', onPress: () => Linking.openSettings() },
-            { text: 'Cancel', style: 'cancel' },
-          ]);
         } else {
-          Alert.alert('Permission Required', 'Gallery access is needed to select photos.', [
-            { text: 'Try Again', onPress: requestGalleryPermission },
-            { text: 'Cancel', style: 'cancel' },
-          ]);
+          // Legacy check for Android 12 and below (API < 33)
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+            {
+              title: 'Gallery Permission',
+              message: 'Gallery access is needed to select photos for pest detection.',
+              buttonPositive: 'Allow',
+              buttonNegative: 'Deny',
+            }
+          );
+          
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            openGallery();
+          } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+            Alert.alert('Gallery Permission', 'Enable Storage permission in your device settings.', [
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+              { text: 'Cancel', style: 'cancel' },
+            ]);
+          } else {
+            Alert.alert('Permission Required', 'Gallery access is needed to select photos.', [
+              { text: 'Try Again', onPress: requestGalleryPermission },
+              { text: 'Cancel', style: 'cancel' },
+            ]);
+          }
         }
       } catch {
         openGallery();

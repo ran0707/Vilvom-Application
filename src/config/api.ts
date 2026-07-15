@@ -1,18 +1,13 @@
 // Centralized API configuration for the Vilvom application
 
 // ─── DEV server (your PC) ────────────────────────────────────────────────────
-// Use your PC's LAN IP so both emulator AND physical device (USB / same WiFi)
-// can reach the backend without any extra adb reverse setup.
-// Change this if your PC's IP changes (run `ipconfig` on Windows).
-//const DEV_HOST = 'http://10.29.49.175';
-const DEV_HOST = 'http://172.16.14.194';
+const DEV_HOST = 'https://app.vilvom.com';
 
 // ─── Production server (E2E Networks) ────────────────────────────────────────
-// Set this to your E2E VM public IP once deployed.
-const E2E_SERVER = 'http://YOUR_E2E_IP'; // e.g. 'http://103.xx.xx.xx'
+const E2E_SERVER = 'https://app.vilvom.com';
 
 // ─── Backend API  (port 5000) ─────────────────────────────────────────────────
-export const DEFAULT_HOST  = __DEV__ ? `${DEV_HOST}:5000` : E2E_SERVER;
+export const DEFAULT_HOST  = E2E_SERVER;
 export const API_BASE_URL  = `${DEFAULT_HOST}/api`;
 
 // ─── YOLO AI service (port 8000) ──────────────────────────────────────────────
@@ -74,3 +69,5 @@ export default {
   API_ENDPOINTS,
   AI_ENDPOINTS,
 };
+
+

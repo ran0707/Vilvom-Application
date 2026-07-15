@@ -9,6 +9,8 @@ import {
   StatusBar,
   useColorScheme,
   BackHandler,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -17,6 +19,8 @@ import { initI18n } from './src/i18n';
 import React, { useEffect, useState, useCallback } from 'react';
 import AppFeedbackModal from './src/components/AppFeedbackModal';
 import { shouldShowFeedbackPopup } from './src/services/feedbackApi';
+// @ts-ignore: no declaration file for react-native-push-notification
+import PushNotification from 'react-native-push-notification';
 
 // Inner shell that has access to AuthContext for the feedback modal
 const AppShell = () => {
@@ -66,10 +70,35 @@ function App() {
   useEffect(() => {
     (async () => {
       try {
-        // Initialize i18n first
+        // 1. Initialize i18n first
         await initI18n();
 
-        // Don't request permissions here - wait for app to be fully initialized
+        // 2. Request Android 13+ Notification Permissions safely here
+        if (Platform.OS === 'android' && Platform.Version >= 33) {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('Notification permission granted');
+          } else {
+            console.log('Notification permission denied');
+          }
+        }
+
+        // 3. Initialize the Local Notification Channel
+        if (Platform.OS === 'android') {
+          PushNotification.createChannel(
+            {
+              channelId: "default-channel-id", // Use this string when triggering your local notifications
+              channelName: "Default Channel",
+              channelDescription: "Local App Notifications",
+              importance: 4, // High priority notification
+              vibrate: true,
+            },
+            (created: boolean) => console.log(`Notification channel created: ${created}`)
+          );
+        }
+
         console.log('App initialized successfully');
       } catch (e) {
         console.warn('App initialization error:', e);

@@ -38,7 +38,9 @@ async function ensureNotificationPermission(): Promise<void> {
   } catch (e) {}
 }
 
-const CHANNEL_ID = 'camellia-default-channel';
+// ─── UNIFIED CHANNELS (Matches App.tsx Channel Initialization) ────────────────
+const CHANNEL_ID = 'default-channel-id';
+const OTP_CHANNEL_ID = 'default-channel-id'; 
 
 const KEYS = {
   WELCOME_SENT:           'notif_welcome_sent',
@@ -62,14 +64,16 @@ function nextNineAM(): Date {
 function fireLocal(title: string, message: string) {
   if (!PushNotification) return;
   try {
+    ensureConfigured();
     PushNotification.localNotification({
       channelId: CHANNEL_ID,
       title,
       message,
       playSound: true,
       soundName: 'default',
-      importance: 'default',
-      vibrate: false,
+      importance: 'high',
+      priority: 'high',
+      vibrate: true,
     });
   } catch (e) {}
 }
@@ -136,6 +140,7 @@ export async function scheduleDailyMorningNotification(): Promise<void> {
       ? `${pestTip}\n\n🗓️ ${spraySummary}`
       : pestTip;
 
+    ensureConfigured();
     PushNotification.localNotificationSchedule({
       channelId: CHANNEL_ID,
       title: '🌿 Morning Field Alert',
@@ -143,9 +148,9 @@ export async function scheduleDailyMorningNotification(): Promise<void> {
       date: nextNineAM(),
       playSound: true,
       soundName: 'default',
-      importance: 'default',
-      vibrate: false,
-      allowWhileIdle: true,
+      importance: 'high',
+      vibrate: true,
+      allowWhileIdle: false, // Prevents exact alarm validation failures on modern Android OS
     });
 
     await setItem(KEYS.MORNING_SCHEDULED_YMD, today);
@@ -213,34 +218,14 @@ export async function canShowPasswordAlert(): Promise<boolean> {
   }
 }
 
-// ─── OTP notification — high-priority heads-up ───────────────────────────────
-
-const OTP_CHANNEL_ID = 'vilvom-otp-channel';
-
-function ensureOtpChannel() {
-  if (!PushNotification?.createChannel) return;
-  try {
-    PushNotification.createChannel(
-      {
-        channelId: OTP_CHANNEL_ID,
-        channelName: 'Vilvom OTP',
-        channelDescription: 'One-time password delivery',
-        importance: 5, // IMPORTANCE_HIGH — shows as heads-up banner
-        vibrate: true,
-        playSound: true,
-        soundName: 'default',
-      },
-      () => {},
-    );
-  } catch (e) {}
-}
+// ─── OTP notification ────────────────────────────────────────────────────────
 
 export async function sendOtpNotification(otp: string, phone: string): Promise<void> {
   if (!PushNotification) return;
   try {
     ensureConfigured();
     await ensureNotificationPermission();
-    ensureOtpChannel();
+    
     const spaced = otp.split('').join(' ');
     PushNotification.localNotification({
       channelId: OTP_CHANNEL_ID,

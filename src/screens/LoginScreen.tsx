@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -28,11 +28,26 @@ const LoginScreen = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
+  // Automatically wipe state inputs when user navigates into this screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setPhone('');
+      setOtp('');
+      setOtpSent(false);
+      setLoading(false);
+      setCountdown(0);
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const startCountdown = () => {
     setCountdown(60);
     const timer = setInterval(() => {
       setCountdown(prev => {
-        if (prev <= 1) { clearInterval(timer); return 0; }
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -74,28 +89,35 @@ const LoginScreen = () => {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otp.trim() || otp.length !== 6) {
+  const handleVerifyOtp = async (targetOtp?: string) => {
+    // Fallback to state value if direct parameter isn't present
+    const finalOtp = targetOtp || otp;
+
+    if (!finalOtp.trim() || finalOtp.length !== 6) {
       Alert.alert('Error', 'Please enter the 6-digit OTP');
       return;
     }
     setLoading(true);
     try {
-      const response = await verifyOtp(phone.trim(), otp.trim());
-      if (response.token && response.user) {
+      // Direct raw response payload processing
+      const response = await verifyOtp(phone.trim(), finalOtp.trim());
+      
+      if (response && response.token && response.user) {
         login(response.token, response.user);
+        const dest = (response as any).isAdmin ? 'AdminPanel' : 'MainTabs';
+        (navigation as any).replace(dest);
+      } else {
+        Alert.alert('Login failed', 'Invalid verification payload received from server.');
       }
-      const dest = (response as any).isAdmin ? 'AdminPanel' : 'MainTabs';
-      Alert.alert('Success', 'Logged in successfully', [
-        { text: 'OK', onPress: () => (navigation as any).replace(dest) },
-      ]);
     } catch (err: any) {
-      Alert.alert('Login failed', err?.message || 'OTP verification failed');
+      // Pull down exact network error text body response details
+      const errorMsg = err?.response?.data?.message || err?.message || 'OTP verification failed';
+      Alert.alert('Login failed', errorMsg);
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -127,7 +149,7 @@ const LoginScreen = () => {
               testID="phone-input"
               style={styles.input}
               placeholder="Phone Number"
-              placeholderTextColor="#999"
+              placeholderTextColor="#494949"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
@@ -147,6 +169,12 @@ const LoginScreen = () => {
               focusColor="#4CAF50"
               focusStickBlinkingDuration={500}
               onTextChange={setOtp}
+              // Immediately triggers validation with the exact filled text
+              // bypassing any asynchronous state updating delays
+              onFilled={(text) => {
+                setOtp(text);
+                handleVerifyOtp(text);
+              }}
               textInputProps={{ accessibilityLabel: 'One-Time Password' }}
               theme={{
                 containerStyle: styles.otpContainer,
@@ -159,7 +187,7 @@ const LoginScreen = () => {
 
             <LeafButton
               label="Verify OTP"
-              onPress={handleVerifyOtp}
+              onPress={() => handleVerifyOtp()}
               loading={loading}
               disabled={otp.length !== 6}
             />
@@ -169,7 +197,7 @@ const LoginScreen = () => {
               onPress={handleRequestOtp}
               disabled={countdown > 0 || loading}
             >
-              <Text style={[styles.resendText, { color: countdown > 0 ? '#999' : '#4CAF50' }]}>
+              <Text style={[styles.resendText, { color: countdown > 0 ? '#313131' : '#4CAF50' }]}>
                 {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
               </Text>
             </TouchableOpacity>
@@ -234,9 +262,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#eee',
+    color:'#333',
   },
-
-  // ── OTP ──
   otpContainer: { marginBottom: 20, marginTop: 10 },
   otpInputContainer: {
     width: 45,
@@ -248,11 +275,10 @@ const styles = StyleSheet.create({
   },
   otpInputText: { fontSize: 18, fontWeight: '600', color: '#333' },
   otpFocusStick: { width: 2, height: 25, backgroundColor: '#4CAF50' },
+  focusedPinCodeContainerStyle: { borderColor: '#4CAF50', borderWidth: 2, backgroundColor: '#fff' },
   otpFocusedContainer: { borderColor: '#4CAF50', borderWidth: 2, backgroundColor: '#fff' },
-
   resendButton: { marginTop: 4, marginBottom: 12 },
   resendText: { fontSize: 14, fontWeight: '500' },
-
   signupRow: { flexDirection: 'row', marginTop: 12 },
   signupRowText: { color: '#555' },
   signupLink: { color: '#4CAF50', fontWeight: '600' },

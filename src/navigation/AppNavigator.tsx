@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -25,24 +25,39 @@ import OrderTrackingScreen       from '../screens/OrderTrackingScreen';
 import ChangePasswordScreen      from '../screens/ChangePasswordScreen';
 import BecomeSellerScreen        from '../screens/BecomeSellerScreen';
 import EditProfileScreen         from '../screens/EditProfileScreen';
+import HelpSupportScreen         from '../screens/HelpSupportScreen';
 import AdminNavigator            from './AdminNavigator';
 
 const Stack = createStackNavigator();
 
-// Decode JWT payload without a library — works offline, no network needed
+const safeDecode = (str: string): string => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let output = '';
+  str = String(str).replace(/=+$/, '');
+  if (str.length % 4 === 1) return '';
+  for (let bc = 0, bs = 0, idx = 0; idx < str.length; idx++) {
+    const p = chars.indexOf(str.charAt(idx));
+    if (p === -1) continue;
+    bs = bc % 4 ? bs * 64 + p : p;
+    if (bc++ % 4) output += String.fromCharCode(255 & bs >> (-2 * bc & 6));
+  }
+  return output;
+};
+
 const isTokenExpired = (token: string): boolean => {
   try {
-    const payloadB64 = token.split('.')[1];
-    if (!payloadB64) return true;
-    // base64url → base64 with proper padding
-    const padding = '='.repeat((4 - (payloadB64.length % 4)) % 4);
-    const base64 = (payloadB64 + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const json = atob(base64); // atob is available globally in React Native 0.63+
+    if (!token || typeof token !== 'string') return true;
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const padding = '='.repeat((4 - (parts[1].length % 4)) % 4);
+    const base64 = (parts[1] + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const json = safeDecode(base64);
+    if (!json) return true;
     const { exp } = JSON.parse(json);
-    if (typeof exp !== 'number') return false; // no exp claim → treat as valid
+    if (typeof exp !== 'number') return false;
     return Date.now() >= exp * 1000;
   } catch {
-    return false; // decode failed → assume valid, let backend reject if truly bad
+    return true;
   }
 };
 
@@ -53,34 +68,25 @@ const SplashEntry = ({ navigation }: any) => {
     const run = async () => {
       const start = Date.now();
       const minSplash = 2000;
-
       try {
         const token = await AsyncStorage.getItem('authToken');
-
-        // No token → first install or logged out → show GetStarted
         if (!token) {
           const delay = Math.max(minSplash - (Date.now() - start), 0);
           setTimeout(() => { if (!cancelled) navigation.replace('GetStarted'); }, delay);
           return;
         }
-
-        // Token exists but is expired → clear storage → force re-login
         if (isTokenExpired(token)) {
           await AsyncStorage.multiRemove(['authToken', 'userData']);
           const delay = Math.max(minSplash - (Date.now() - start), 0);
           setTimeout(() => { if (!cancelled) navigation.replace('GetStarted'); }, delay);
           return;
         }
-
-        // Valid token → skip auth screens entirely
         const userDataStr = await AsyncStorage.getItem('userData');
         const userData = userDataStr ? JSON.parse(userDataStr) : null;
         const dest = userData?.isAdmin ? 'AdminPanel' : 'MainTabs';
         const delay = Math.max(minSplash - (Date.now() - start), 0);
         setTimeout(() => { if (!cancelled) navigation.replace(dest); }, delay);
-
       } catch {
-        // Storage read failed — safe fallback: go to GetStarted
         const delay = Math.max(minSplash - (Date.now() - start), 0);
         setTimeout(() => { if (!cancelled) navigation.replace('GetStarted'); }, delay);
       }
@@ -97,7 +103,7 @@ const AppNavigator = () => (
   <NavigationContainer>
     <Stack.Navigator
       initialRouteName="Splash"
-      screenOptions={{ headerShown: false, animationEnabled: false }}
+      screenOptions={{ headerShown: false, animation: 'none' }}
     >
       <Stack.Screen name="Splash"    component={SplashEntry} />
       <Stack.Screen name="GetStarted">
@@ -129,6 +135,7 @@ const AppNavigator = () => (
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen name="BecomeSeller"   component={BecomeSellerScreen} />
       <Stack.Screen name="EditProfile"    component={EditProfileScreen} />
+      <Stack.Screen name="HelpSupport"    component={HelpSupportScreen} />
       <Stack.Screen name="AdminPanel"      component={AdminNavigator} />
     </Stack.Navigator>
   </NavigationContainer>

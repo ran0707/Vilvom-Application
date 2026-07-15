@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import DeviceInfoService, { DeviceInformation } from './deviceInfoService';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { showErrorToast } from '../utils/toast';
 
 export interface User {
   id: string;
@@ -142,10 +143,11 @@ const makeAuthRequest = async (
       err.message &&
       err.message.includes('Network request failed')
     ) {
-      throw new Error(
-        `Network request failed: cannot reach ${API_BASE_URL}. If you're running on Android emulator use 10.0.2.2 or update the API host to your machine IP.`,
-      );
+      const msg = `Cannot reach server. Check your connection.`;
+      showErrorToast(msg);
+      throw new Error(msg);
     }
+    showErrorToast(err.message || 'Request failed');
     throw err;
   }
 };
@@ -168,8 +170,9 @@ export const requestOtp = async (phone: string): Promise<OtpResponse> => {
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Request OTP error:', error);
+    showErrorToast(error.message || 'Failed to send OTP');
     throw error;
   }
 };
@@ -209,8 +212,9 @@ export const verifyOtp = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Verify OTP error:', error);
+    showErrorToast(error.message || 'OTP verification failed');
     throw error;
   }
 };
@@ -233,8 +237,9 @@ export const requestLoginOtp = async (phone: string): Promise<OtpResponse> => {
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Request login OTP error:', error);
+    showErrorToast(error.message || 'Failed to send login OTP');
     throw error;
   }
 };
@@ -272,8 +277,9 @@ export const signup = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Signup error:', error);
+    showErrorToast(error.message || 'Signup failed');
     throw error;
   }
 };
@@ -307,8 +313,9 @@ export const login = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
+    showErrorToast(error.message || 'Login failed');
     throw error;
   }
 };
@@ -410,8 +417,9 @@ export const requestForgotPasswordOtp = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Request forgot password OTP error:', error);
+    showErrorToast(error.message || 'Failed to send reset OTP');
     throw error;
   }
 };
@@ -440,8 +448,9 @@ export const resetPassword = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Reset password error:', error);
+    showErrorToast(error.message || 'Password reset failed');
     throw error;
   }
 };

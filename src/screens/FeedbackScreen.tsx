@@ -61,11 +61,10 @@ const FeedbackScreen = () => {
 
   const ensureAudioPermission = async () => {
     if (Platform.OS !== 'android') return true;
-    const perms = await PermissionsAndroid.requestMultiple([
+    const result = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    ]);
-    return perms[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === 'granted';
+    );
+    return result === PermissionsAndroid.RESULTS.GRANTED;
   };
 
   const startAudioRecording = async () => {
@@ -116,7 +115,6 @@ const FeedbackScreen = () => {
         mediaType: 'video',
         videoQuality: 'high',
         durationLimit: 60,
-        saveToPhotos: true,
       });
       if (res.didCancel) return;
       if (res.assets && res.assets.length > 0) {
@@ -133,7 +131,6 @@ const FeedbackScreen = () => {
       const res = await launchCamera({
         mediaType: 'photo',
         quality: 0.8,
-        saveToPhotos: true,
       });
       if (res.didCancel) return;
       if (res.assets && res.assets.length > 0) {

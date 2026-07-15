@@ -317,10 +317,7 @@ const ProfileTab = () => {
 
             <TouchableOpacity
               style={styles.menuRow}
-              onPress={() => Alert.alert(
-                t('profile.help_support') as string,
-                'Email: support@vilvom.com\nPhone: +91-1800-180-1551\nHours: Mon–Fri 09:00–18:00',
-              )}
+              onPress={() => (navigation as any).navigate('HelpSupport')}
             >
               <View style={[styles.menuIconWrap, { backgroundColor: '#F3E5F5' }]}>
                 <MaterialIcons name="support-agent" size={18} color="#7B1FA2" />

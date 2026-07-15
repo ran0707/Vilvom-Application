@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,48 +16,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { detectPest } from '../services/pestDetectionApi';
-import GeminiService from '../services/geminiService';
-import { GEMINI_API_KEY } from '../config/gemini';
 import PestApi from '../services/pestApi';
 import { DEFAULT_HOST } from '../config/api';
-import { createPPCSystemPrompt } from '../utils/ppcGuidelines';
 import { getPPCDataForPest, PPC_VERSION } from '../utils/ppcPestData';
 
-// Function to parse and render markdown text with bold formatting
-// Returns a single Text parent so content flows inline; bold segments are nested Text elements.
-const renderMarkdownText = (text: string) => {
-  // Handle both **bold** and *bold* formats
-  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-
-  return (
-    <Text style={styles.assistantMessageText}>
-      {parts.map((part, index) => {
-        if (
-          (part.startsWith('**') && part.endsWith('**')) ||
-          (part.startsWith('*') && part.endsWith('*') && part.length > 2)
-        ) {
-          // Remove * or ** and render as nested bold Text so it stays inline
-          const boldText = part.replace(/^\*+|\*+$/g, '');
-          return (
-            <Text
-              key={index}
-              style={[styles.assistantMessageText, styles.boldText]}
-            >
-              {boldText}
-            </Text>
-          );
-        }
-
-        // Normal text segment - as child Text to preserve inline flow
-        return <Text key={index}>{part}</Text>;
-      })}
-    </Text>
-  );
-};
 
 const { width, height } = Dimensions.get('window');
 
@@ -101,26 +65,13 @@ const formatDate = (dateStr: string) => {
 const PestResultScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [imageUriResolved, setImageUriResolved] = useState<string | null>(null);
   const [imageLoadError, setImageLoadError] = useState(false);
-  const [chatMessages, setChatMessages] = useState<
-    Array<{
-      role: 'user' | 'assistant' | 'system';
-      text: string;
-      image?: string;
-    }>
-  >([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
   const [imageModalVisible, setImageModalVisible] = useState(false);
-  const chatScrollRef = useRef<ScrollView | null>(null);
   const [questionnaire, setQuestionnaire] = useState<any>(null);
   const [recommendationLevel, setRecommendationLevel] = useState<'standard' | 'escalated'>('standard');
-  const [chatInitialized, setChatInitialized] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [feedbackType, setFeedbackType] = useState<'text' | 'audio' | 'video'>(
     'text',
@@ -129,132 +80,7 @@ const PestResultScreen: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
-  // Generate suggestions based on the result
-  const generateSuggestions = (result: any) => {
-    if (!result || !result.prediction) return [];
-
-    const pestName = result.prediction.toLowerCase();
-    const baseSuggestions = [
-      'What are the symptoms of this pest?',
-      'Tell me about treatment options',
-      'What pesticides should I use?',
-      'How to prevent this pest?',
-    ];
-
-    // Add specific suggestions based on pest type
-    if (pestName.includes('looper')) {
-      return [
-        ...baseSuggestions,
-        'What is the life cycle of looper caterpillar?',
-        'Best time to apply insecticides for looper?',
-        'Natural enemies of looper caterpillar',
-      ];
-    } else if (pestName.includes('red slug')) {
-      return [
-        ...baseSuggestions,
-        'How to identify red slug caterpillar?',
-        'Safe pesticides for red slug control',
-        'Organic methods for red slug management',
-      ];
-    } else if (pestName.includes('spider mite')) {
-      return [
-        ...baseSuggestions,
-        'Water management for spider mite control',
-        'Acaricides for spider mite treatment',
-        'Shade management to prevent spider mites',
-      ];
-    } else if (pestName.includes('leafhopper')) {
-      return [
-        ...baseSuggestions,
-        'Systemic insecticides for leafhopper',
-        'Yellow sticky traps for leafhopper monitoring',
-        'Pruning techniques for leafhopper control',
-      ];
-    } else if (pestName.includes('mosquito bug')) {
-      return [
-        ...baseSuggestions,
-        'Feeding habits of tea mosquito bug',
-        'Chemical control for mosquito bug',
-        'Cultural practices to reduce mosquito bug',
-      ];
-    } else if (pestName.includes('thrips')) {
-      return [
-        ...baseSuggestions,
-        'Thrips damage symptoms on tea leaves',
-        'Insecticides effective against thrips',
-        'Sticky traps for thrips monitoring',
-      ];
-    }
-
-    return baseSuggestions;
-  };
-
-  // Local storage keys
-  const CHAT_STORAGE_KEY = 'current_chat_session';
-  const RESULT_ID_KEY = 'current_result_id';
-
-  // Save chat messages to local storage
-  const saveChatToLocal = async (messages: any[], resultId?: string) => {
-    try {
-      const chatData = {
-        messages,
-        resultId,
-        timestamp: new Date().toISOString(),
-      };
-      await AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatData));
-      if (resultId) {
-        await AsyncStorage.setItem(RESULT_ID_KEY, resultId);
-      }
-    } catch (e) {
-      console.warn('Failed to save chat to local storage:', e);
-    }
-  };
-
-  // Load chat messages from local storage
-  const loadChatFromLocal = async () => {
-    try {
-      const chatData = await AsyncStorage.getItem(CHAT_STORAGE_KEY);
-      const resultId = await AsyncStorage.getItem(RESULT_ID_KEY);
-
-      if (chatData) {
-        const parsed = JSON.parse(chatData);
-        // Only restore if it's for the current result or if no result ID is set
-        if (
-          !resultId ||
-          !result ||
-          result._id === resultId ||
-          result._id === parsed.resultId
-        ) {
-          return parsed.messages;
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to load chat from local storage:', e);
-    }
-    return null;
-  };
-
-  // Clear local chat storage
-  const clearLocalChat = async () => {
-    try {
-      await AsyncStorage.removeItem(CHAT_STORAGE_KEY);
-      await AsyncStorage.removeItem(RESULT_ID_KEY);
-    } catch (e) {
-      console.warn('Failed to clear local chat:', e);
-    }
-  };
-
   const getParams = () => (route as any).params || {};
-
-  // Clear local chat when navigating away or component unmounts
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', () => {
-      // Clear local chat when leaving the screen
-      clearLocalChat();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
 
   const normalizeImageUri = (rawImage: any) => {
     if (!rawImage) return null;
@@ -281,7 +107,6 @@ const PestResultScreen: React.FC = () => {
     try {
       const res = await detectPest(imageUri);
       setResult(res);
-      setSuggestions(generateSuggestions(res));
     } catch (e) {
       console.warn('detectPest error', e);
     } finally {
@@ -296,39 +121,12 @@ const PestResultScreen: React.FC = () => {
       if (params.result) {
         if (mounted) {
           setResult(params.result);
-          setSuggestions(generateSuggestions(params.result));
           // For historical data, don't show questionnaire info
           if (!params.isHistorical) {
             setQuestionnaire(params.questionnaire || null);
             setRecommendationLevel(params.recommendationLevel || 'standard');
           }
-          // Reset chat initialization for new results
-          setChatInitialized(false);
-          // If the incoming result already has saved chat, restore it
-          const incomingChat = params.result.chat;
-          if (Array.isArray(incomingChat) && incomingChat.length > 0) {
-            setChatMessages([
-              {
-                role: 'system',
-                text: createPPCSystemPrompt(params.result),
-              },
-              ...incomingChat.map((c: any) => ({
-                role: c.role || 'assistant',
-                text: c.text || '',
-              })),
-            ]);
-            setChatInitialized(true);
-          } else {
-            // Initialize with system prompt for new detections
-            setChatMessages([
-              {
-                role: 'system',
-                text: createPPCSystemPrompt(params.result),
-              },
-            ]);
-            setChatInitialized(true);
-          }
-        }
+}
         return;
       }
       if (params.imageUri) {
@@ -357,34 +155,8 @@ const PestResultScreen: React.FC = () => {
       setImageUriResolved(resolved);
       setImageLoadError(false);
 
-      // Initialize chat with system prompt that includes pest analysis data and PPC guidelines
-      // Only initialize if chat hasn't been initialized yet (to prevent clearing existing chat)
-      if (!chatInitialized) {
-        // First try to load from local storage
-        const localChat = await loadChatFromLocal();
-        if (localChat && localChat.length > 1) {
-          // More than just system message
-          setChatMessages(localChat);
-          setChatInitialized(true);
-        } else {
-          // Initialize fresh chat
-          const initialMessages: Array<{
-            role: 'user' | 'assistant' | 'system';
-            text: string;
-            image?: string;
-          }> = [
-            {
-              role: 'system',
-              text: createPPCSystemPrompt(result),
-            },
-          ];
-          setChatMessages(initialMessages);
-          await saveChatToLocal(initialMessages, result._id);
-          setChatInitialized(true);
-        }
-      }
-
       // Persist detection to backend
+// Persist detection to backend
       (async () => {
         try {
           if (result.meta && result.meta.savedToServer) return;
@@ -440,14 +212,17 @@ const PestResultScreen: React.FC = () => {
             patchPayload.questionnaire = questionnaireItems;
           }
 
-          const patched = await PestApi.patchDetection(detectionId, patchPayload);
+          const patched = await PestApi.patchDetection(detectionId, patchPayload, true);
           console.log('Detection updated with location+questionnaire:', patched);
           setResult((r: any) => ({
             ...(r || {}),
             meta: { ...((r && r.meta) || {}), savedToServer: true },
           }));
         } catch (e) {
-          console.error('Failed to update detection metadata:', e);
+          // ✅ SILENT ERROR HANDLER: Catches internal server sync bugs silently
+          // The error logs to your terminal for development, but the grower never sees an alert.
+          console.log('Background metadata sync skipped (handled silently):', e);
+          
           setResult((r: any) => ({
             ...(r || {}),
             meta: { ...((r && r.meta) || {}), savedToServer: true },
@@ -479,140 +254,6 @@ const PestResultScreen: React.FC = () => {
       mounted = false;
     };
   }, [result]);
-
-  const sendMessage = async () => {
-    if (!chatInput.trim() || chatLoading) return;
-
-    const userText = chatInput.trim();
-    setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
-    setChatLoading(true);
-
-    // Scroll to bottom after adding user message
-    setTimeout(() => {
-      chatScrollRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-
-    try {
-      const msgs = chatMessages.map(m => ({
-        role: m.role,
-        content: m.text,
-      }));
-      msgs.push({ role: 'user', content: userText });
-
-      const resp = await GeminiService.sendChatMessage(
-        GEMINI_API_KEY,
-        msgs as any,
-      );
-
-      let assistantText = String(resp || '');
-      try {
-        const parsed = JSON.parse(assistantText);
-        if (parsed.output_text) assistantText = parsed.output_text;
-        else if (parsed.candidates && parsed.candidates[0]) {
-          const c = parsed.candidates[0];
-          if (c.content && Array.isArray(c.content))
-            assistantText = c.content.map((p: any) => p.text || '').join('\n');
-          else if (c.content && c.content.text) assistantText = c.content.text;
-        }
-      } catch (e) {
-        // not JSON - use raw text
-      }
-
-      // Clean up the response - make it very concise
-      assistantText = assistantText
-        .replace(/\n{3,}/g, '\n') // Replace multiple newlines with single
-        .replace(/^\s*[-*]\s*/gm, '• ') // Convert markdown lists to bullet points
-        .replace(/\*\*(.*?)\*\*/g, '**$1**') // Ensure bold formatting is preserved
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .trim();
-
-      // Remove character limit to allow full responses
-      // assistantText = assistantText.length > 500 ? assistantText.substring(0, 450) + '...' : assistantText;
-
-      setChatMessages(prev => [
-        ...prev,
-        { role: 'assistant', text: assistantText },
-      ]);
-
-      // Save updated chat to local storage immediately
-      const updatedMessages = [
-        ...chatMessages,
-        { role: 'user', text: userText },
-        { role: 'assistant', text: assistantText },
-      ];
-      await saveChatToLocal(updatedMessages, result?._id);
-
-      // Update the result state to include the new chat message for persistence
-      setResult((r: any) => {
-        if (!r) return r;
-        const updatedChat = [
-          ...(r.chat || []),
-          { role: 'user', text: userText, timestamp: new Date() },
-          { role: 'assistant', text: assistantText, timestamp: new Date() },
-        ];
-        // Save to local storage
-        saveChatToLocal(updatedMessages, r._id || result?._id);
-        return {
-          ...r,
-          chat: updatedChat,
-        };
-      });
-
-      // Persist the updated chat to backend if we have a saved recommendation ID
-      if (result && result._id) {
-        try {
-          const existingChat: any[] = result.chat || [];
-          const updatedChat = [
-            ...existingChat.map((m: any, i: number) => ({
-              id: m.id || `msg_${i}`,
-              role: m.role,
-              message: m.message || m.text || '',
-              timestamp:
-                typeof m.timestamp === 'string'
-                  ? m.timestamp
-                  : new Date().toISOString(),
-            })),
-            {
-              id: `msg_${existingChat.length}`,
-              role: 'user',
-              message: userText,
-              timestamp: new Date().toISOString(),
-            },
-            {
-              id: `msg_${existingChat.length + 1}`,
-              role: 'assistant',
-              message: assistantText,
-              timestamp: new Date().toISOString(),
-            },
-          ];
-          const updateResult = await PestApi.patchDetection(result._id, {
-            chat: updatedChat,
-          });
-          console.log('Chat update successful:', updateResult);
-        } catch (e) {
-          console.error('Failed to update chat in backend:', e);
-        }
-      }
-
-      // Scroll to bottom after adding assistant message
-      setTimeout(() => {
-        chatScrollRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    } catch (e) {
-      setChatMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          text:
-            t('pest_result.chat_error') ||
-            'Sorry, I encountered an error. Please try again.',
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
 
   const submitFeedback = async () => {
     if (!feedbackText.trim() && feedbackType === 'text') {
@@ -696,9 +337,7 @@ const PestResultScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        {/* Chat Messages */}
         <ScrollView
-          ref={chatScrollRef as any}
           style={styles.messagesContainer}
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
@@ -968,85 +607,7 @@ const PestResultScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Chat Messages */}
-          {chatMessages
-            .filter(m => m.role !== 'system')
-            .map((message, index) => (
-              <View key={`msg-${index}`} style={styles.messageWrapper}>
-                {message.role === 'user' ? (
-                  <View style={styles.userMessageContainer}>
-                    <View style={styles.userMessage}>
-                      <Text style={styles.userMessageText}>{message.text}</Text>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.assistantMessageContainer}>
-                    <View style={styles.assistantMessage}>
-                      {renderMarkdownText(message.text)}
-                    </View>
-                  </View>
-                )}
-              </View>
-            ))}
-
-          {chatLoading && (
-            <View style={styles.assistantMessageContainer}>
-              <View style={styles.assistantMessage}>
-                <ActivityIndicator size="small" color="#4CAF50" />
-                <Text style={styles.loadingText}>Thinking...</Text>
-              </View>
-            </View>
-          )}
         </ScrollView>
-
-        {/* Suggestions */}
-        {suggestions.length > 0 && (
-          <View style={styles.suggestionsContainer}>
-            <Text style={styles.suggestionsHeader}>💡 Quick Questions</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.suggestionsScroll}
-            >
-              {suggestions.map((suggestion, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.suggestionChip}
-                  onPress={() => {
-                    setChatInput(suggestion);
-                  }}
-                >
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Input Area */}
-        <View style={styles.inputArea}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              value={chatInput}
-              onChangeText={setChatInput}
-              placeholder="Ask: pesticides, why, treatment, symptoms..."
-              placeholderTextColor="#999"
-              multiline
-              maxLength={500}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                { opacity: chatInput.trim() ? 1 : 0.5 },
-              ]}
-              onPress={sendMessage}
-              disabled={!chatInput.trim() || chatLoading}
-            >
-              <Icon name="send" size={20} color="#4CAF50" />
-            </TouchableOpacity>
-          </View>
-        </View>
       </KeyboardAvoidingView>
 
       {/* Image Modal */}

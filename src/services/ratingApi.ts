@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../config/api';
 import { getItem } from '../utils/storage';
+import { showErrorToast } from '../utils/toast';
 
 export interface RatingData {
   serviceType: 'advisory' | 'drone';
@@ -47,8 +48,9 @@ export const submitServiceRating = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Rating submission error:', error);
+    showErrorToast(error.message || 'Failed to submit rating');
     throw error;
   }
 };
@@ -149,8 +151,9 @@ export const updateServiceRating = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Rating update error:', error);
+    showErrorToast(error.message || 'Failed to update rating');
     throw error;
   }
 };
@@ -182,8 +185,9 @@ export const deleteServiceRating = async (
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Rating deletion error:', error);
+    showErrorToast(error.message || 'Failed to delete rating');
     throw error;
   }
 };

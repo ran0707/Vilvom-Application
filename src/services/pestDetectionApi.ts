@@ -2,6 +2,7 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { showErrorToast } from '../utils/toast';
 
 // Note: This service now uses the backend API (port 5000) instead of connecting 
 // directly to the AI service (port 8000). The backend forwards requests to the AI service.
@@ -258,28 +259,24 @@ export const detectPest = async (
       mechanical_control: detectionData.mechanical_control || [],
       processed_image: detectionData.processed_image || '',
     };
-  } catch (error) {
+  } catch (error: any) {
     // Enhanced error logging
     console.error('[pestDetectionApi] Error details:', {
-      message: (error as any)?.message,
-      name: (error as any)?.name,
-      stack: (error as any)?.stack,
+      message: error?.message,
+      name: error?.name,
+      stack: error?.stack,
       fullError: error,
     });
-    
+
     // If network-related, provide actionable hint
-    if (
-      error instanceof TypeError &&
-      (error as any).message === 'Network request failed'
-    ) {
-      console.error(
-        '[pestDetectionApi] Network request failed. Ensure the backend API is running on port 5000. The backend will handle communication with the AI service on port 8000.',
-      );
-      throw new Error(
-        'Network error: Cannot reach backend server. Please check your connection and ensure the backend is running on port 5000.'
-      );
+    if (error instanceof TypeError && error.message === 'Network request failed') {
+      const msg = 'Network error: Cannot reach backend server. Please check your connection.';
+      console.error('[pestDetectionApi] Network request failed.');
+      showErrorToast(msg);
+      throw new Error(msg);
     }
-    
+
+    showErrorToast(error?.message || 'Pest detection failed');
     throw error;
   }
 };
