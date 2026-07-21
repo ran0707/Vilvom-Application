@@ -21,6 +21,14 @@ function ensureConfigured() {
 }
 
 async function ensureNotificationPermission(): Promise<void> {
+  if (Platform.OS === 'ios') {
+    try {
+      if (PushNotification?.requestPermissions) {
+        await PushNotification.requestPermissions();
+      }
+    } catch (e) {}
+    return;
+  }
   if (Platform.OS !== 'android') return;
   try {
     // POST_NOTIFICATIONS required on Android 13+ (API 33+)

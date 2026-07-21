@@ -1,35 +1,57 @@
-# Resolve react_native_pods.rb with node to allow for hoisting
-require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
-    "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1]]},
-  )', __dir__]).strip
+require_relative '../node_modules/react-native/scripts/react_native_pods'
 
-platform :ios, min_ios_version_supported
-prepare_react_native_project!
-
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
+platform :ios, '15.1'
+inhibit_all_warnings!
 
 target 'Vilvom_app' do
   config = use_native_modules!
 
+  # Cleaned up for compatibility with your React Native version
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
+    :hermes_enabled => true,
+    :fabric_enabled => false,
+    :new_arch_enabled => false
   )
 
+  # Notice: We are NOT calling use_flipper!() here, which keeps it disabled safely.
+
   post_install do |installer|
-    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false
     )
+
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        # 🟢 Keep C++20 active globally so React Native features like 'starts_with' compile properly
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
+
+        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.1
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        end
+      end
+    end
+
+    # Work around a consteval regression in this Xcode's Clang that breaks fmt's
+    # compile-time format string checker ("call to consteval function ... is not
+    # a constant expression" in format-inl.h). fmt/base.h unconditionally
+    # #defines FMT_USE_CONSTEVAL itself (no #ifndef guard), so passing
+    # -DFMT_USE_CONSTEVAL=0 as a compiler flag has no effect — it gets
+    # overwritten by the header. Force it off after the fact instead.
+    fmt_header = File.join(__dir__, 'Pods', 'fmt', 'include', 'fmt', 'base.h')
+    if File.exist?(fmt_header)
+      contents = File.read(fmt_header)
+      marker = '#undef FMT_USE_CONSTEVAL'
+      unless contents.include?(marker)
+        patched = contents.sub(
+          "#if FMT_USE_CONSTEVAL\n",
+          "#{marker}\n#define FMT_USE_CONSTEVAL 0\n#if FMT_USE_CONSTEVAL\n"
+        )
+        File.chmod(0644, fmt_header)
+        File.write(fmt_header, patched)
+        File.chmod(0444, fmt_header)
+      end
+    end
   end
 end

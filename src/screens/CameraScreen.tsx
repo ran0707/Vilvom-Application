@@ -170,7 +170,7 @@ const requestGalleryPermission = async () => {
       return;
     }
     setLoading(true);
-    launchCamera({ mediaType: 'photo', quality: 0.8, includeBase64: true }, (response: any) => {
+    launchCamera({ mediaType: 'photo', quality: 0.8, maxWidth: 1600, maxHeight: 1600, includeBase64: true }, (response: any) => {
       setLoading(false);
       if (response.didCancel) return;
       if (response.errorMessage) { Alert.alert('Error', response.errorMessage); return; }
@@ -187,7 +187,7 @@ const requestGalleryPermission = async () => {
       return;
     }
     setLoading(true);
-    launchImageLibrary({ mediaType: 'photo', quality: 0.8, includeBase64: true, selectionLimit: 1 }, (response: any) => {
+    launchImageLibrary({ mediaType: 'photo', quality: 0.8, maxWidth: 1600, maxHeight: 1600, includeBase64: true, selectionLimit: 1 }, (response: any) => {
       setLoading(false);
       if (response.didCancel) return;
       if (response.errorCode === 'permission') {
