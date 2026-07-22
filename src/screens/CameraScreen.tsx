@@ -173,6 +173,17 @@ const requestGalleryPermission = async () => {
     launchCamera({ mediaType: 'photo', quality: 0.8, maxWidth: 1600, maxHeight: 1600, includeBase64: true }, (response: any) => {
       setLoading(false);
       if (response.didCancel) return;
+      if (response.errorCode === 'camera_unavailable') {
+        Alert.alert('No Camera Available', 'This device (or simulator) has no usable camera. Please pick a photo from the gallery instead.');
+        return;
+      }
+      if (response.errorCode === 'permission') {
+        Alert.alert('Permission Required', 'Grant camera permission in device settings.', [
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
+        return;
+      }
       if (response.errorMessage) { Alert.alert('Error', response.errorMessage); return; }
       const asset = response.assets?.[0];
       const uri   = asset?.uri || (asset?.base64 ? `data:${asset.type || 'image/jpeg'};base64,${asset.base64}` : null);
