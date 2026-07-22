@@ -52,7 +52,7 @@ For more information, please visit [CocoaPods Getting Started guide](https://gui
 
 ```sh
 # Using npm
-npm run ios
+npx react-native run-ios
 
 # OR using Yarn
 yarn ios
